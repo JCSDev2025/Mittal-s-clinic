@@ -1,4 +1,3 @@
-import app from '../serverEntry.js';
 import { Patient, Doctor, Appointment, Treatment } from './models/models.js';
 
 
@@ -18,6 +17,34 @@ app.post('/api/patientDetails', async (req, res) => {
   }
 });
 
+app.put('/api/patientDetails/:id', async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    console.log("Updating patient with ID:", patientId);
+    console.log("Request body:", req.body);
+    const updatedPatient = await Patient.findByIdAndUpdate(patientId, req.body, { new: true });
+    if (!updatedPatient) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }   
+    res.status(200).json({ message: 'Patient details updated', patient: updatedPatient });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+
+});
+
+app.delete('/api/patientDetails/:id', async (req, res) => {
+  try {
+    const patientId = req.params.id;
+    const deletedPatient = await Patient.findByIdAndDelete(patientId);
+    if (!deletedPatient) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }   
+    res.status(200).json({ message: 'Patient details deleted', patient: deletedPatient });
+  } catch (error) { 
+    res.status(400).json({ error: error.message });
+  }
+});
 
 app.post('/api/doctorDetails', async (req, res) => {
   try {
@@ -28,6 +55,34 @@ app.post('/api/doctorDetails', async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 });
+
+app.put('/api/doctorDetails/:id', async (req, res) => {
+  try {
+    const doctorId = req.params.id;
+    const updatedDoctor = await Doctor.findByIdAndUpdate(doctorId, req.body, { new: true });
+    if (!updatedDoctor) {
+      return res.status(404).json({ error: 'Doctor not found' });
+    }     
+    res.status(200).json({ message: 'Doctor details updated', doctor: updatedDoctor });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.delete('/api/doctorDetails/:id', async (req, res) => {
+  try {
+    const doctorId = req.params.id;
+    const deletedDoctor = await Doctor.findByIdAndDelete(doctorId);
+    if (!deletedDoctor) {
+      return res.status(404).json({ error: 'Doctor not found' });
+    }     
+    res.status(200).json({ message: 'Doctor details deleted', doctor: deletedDoctor });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+}
+);
+
 
 app.post('/api/appointment', async (req, res) => {
   try {
