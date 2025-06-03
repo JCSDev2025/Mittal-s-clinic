@@ -94,6 +94,45 @@ app.post('/api/appointment', async (req, res) => {
   }
 });
 
+app.get('/api/appointments', async (req, res) => {
+  try {
+    const appointments = await Appointment.find();
+    res.status(200).json(appointments);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// edit an appointment
+app.put('/api/appointment/:id', async (req, res) => {
+  try {
+    const appointmentId = req.params.id;
+    const updatedAppointment = await Appointment.findByIdAndUpdate(appointmentId, req.body, { new: true });
+    if (!updatedAppointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }     
+    res.status(200).json({ message: 'Appointment updated', appointment: updatedAppointment });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// cancel an appointment
+app.delete('/api/appointment/:id', async (req, res) => {
+  try {
+    const appointmentId = req.params.id;
+    const deletedAppointment = await Appointment.findByIdAndDelete(appointmentId);
+    if (!deletedAppointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }     
+    res.status(200).json({ message: 'Appointment cancelled', appointment: deletedAppointment });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+
+
 // Create a treatment
 app.post('/api/treatments', async (req, res) => {
   try {
@@ -112,6 +151,35 @@ app.get('/api/treatments', async (req, res) => {
     res.status(200).json(treatments);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Update a treatment
+app.put('/api/treatments/:id', async (req, res) => {
+  try {
+    const treatmentId = req.params.id;
+    const updatedTreatment = await Treatment.findByIdAndUpdate(treatmentId, req.body, { new: true });
+    if (!updatedTreatment) {
+      return res.status(404).json({ error: 'Treatment not found' });
+    }   
+    res.status(200).json({ message: 'Treatment updated', treatment: updatedTreatment });
+
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  } 
+});
+
+// Delete a treatment
+app.delete('/api/treatments/:id', async (req, res) => {
+  try {
+    const treatmentId = req.params.id;
+    const deletedTreatment = await Treatment.findByIdAndDelete(treatmentId);
+    if (!deletedTreatment) {
+      return res.status(404).json({ error: 'Treatment not found' });
+    }   
+    res.status(200).json({ message: 'Treatment deleted', treatment: deletedTreatment });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
   }
 });
 
