@@ -95,6 +95,39 @@ const treatmentSchema = mongoose.Schema({
     price: { type: Number, required: false },
 });
 
+// create models for billing an appointment
+export const Billing = mongoose.model('Billing', new mongoose.Schema({
+    appointmentId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Appointment',
+        required: true
+    },
+    amount: {
+        type: Number,
+        required: true
+    },
+    paidAmount: {
+        type: Number,
+        required: true
+    },
+    paymentStatus: {
+        type: String,
+        enum: ['Paid', 'Pending', 'Failed'],
+        default: 'Pending'
+    },
+    paymentDate: {
+        type: Date,
+        default: Date.now
+    },
+    paymentMethod : {
+        type: String,
+        enum: ['Credit Card', 'Debit Card', 'Cash', 'Online'],
+        default: 'Online'
+    }
+    
+    
+}), 'billing_details');
+
 export const Treatment = mongoose.model('Treatment', treatmentSchema, 'treatments');
 export const Appointment = mongoose.model('Appointment', appointmentSchema, 'appointments');
 export const Patient = mongoose.model('Patient', patientSchema, 'patient_details');

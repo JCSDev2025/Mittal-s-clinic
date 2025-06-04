@@ -1,4 +1,4 @@
-import { Patient, Doctor, Appointment, Treatment } from './models/models.js';
+import { Patient, Doctor, Appointment, Treatment, Billing } from './models/models.js';
 
 
 export default function registerRoutes(app) {
@@ -75,13 +75,12 @@ app.delete('/api/doctorDetails/:id', async (req, res) => {
     const deletedDoctor = await Doctor.findByIdAndDelete(doctorId);
     if (!deletedDoctor) {
       return res.status(404).json({ error: 'Doctor not found' });
-    }     
+    }
     res.status(200).json({ message: 'Doctor details deleted', doctor: deletedDoctor });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
-}
-);
+});
 
 
 app.post('/api/appointment', async (req, res) => {
@@ -202,4 +201,56 @@ app.get('/api/appointments/by-patient/:patientName', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// add billing for an appointment
+app.post('/api/billing/:appointmentId', async (req, res) => {
+  try {
+    const appointmentId = req.params.appointmentId;
+
+    // Optional: Check if the appointment exists
+    const appointment = await Appointment.findById(appointmentId);
+    if (!appointment) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+
+    // Create billing with appointmentId from URL
+    const billing = new Billing({
+      ...req.body,
+      appointmentId: appointmentId
+    });
+
+    await billing.save();
+    res.status(201).json({ message: 'Billing details saved', billing });
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Fetch billing details by appointment ID
+app.get('/api/billing/:appointmentId', async (req, res) => {
+  try {
+    const appointmentId = req.params.appointmentId;
+    const billingDetails = await Billing.findOne({ appointmentId: appointmentId });
+    if (!billingDetails) {
+      return res.status(404).json({ error: 'Billing details not found' });
+    }
+    const pendingAmount = billingDetails.amount - (billingDetails.paidAmount || 0);
+    res.status(200).json({ ...billingDetails.toObject(), pendingAmount });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// need an endpoiny to fetch patient history 
+
+app.get('/api/patientHistory/:patientId', async (req, res) => {
+  try {
+    const patientId = req.params.patientId;
+    const appointments = await Appointment.find({ patientId: patientId }).populate('doctorId');
+    res.status(200).json(appointments);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }});
 }
+
+// 
