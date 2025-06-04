@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { FaUser, FaLock } from 'react-icons/fa';
+import BackgroundImg from "../assets/Log2.webp";
 
 const Login = ({ setIsAuthenticated }) => {
   const [username, setUsername] = useState('');
@@ -9,7 +11,7 @@ const Login = ({ setIsAuthenticated }) => {
     e.preventDefault();
 
     if (username === 'Admin' && password === '123456789') {
-      setIsAuthenticated(true); // This will also store in localStorage
+      setIsAuthenticated(true);
       setError('');
     } else {
       setError('Invalid username or password');
@@ -17,42 +19,48 @@ const Login = ({ setIsAuthenticated }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-sm">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Login</h2>
+    <div
+      className="min-h-screen flex items-center justify-start bg-cover bg-no-repeat"
+      style={{ backgroundImage: `url(${BackgroundImg})` }}
+    >
+      <div className="bg-white bg-opacity-30 backdrop-blur-md rounded-xl shadow-2xl p-8 w-full max-w-md ml-28 animate-fade-in">
+
+        <h2 className="text-3xl font-bold text-blue-900 text-center mb-6 drop-shadow-md">Welcome Back</h2>
 
         {error && (
-          <div className="mb-4 text-red-500 text-sm text-center">{error}</div>
+          <div className="mb-4 text-red-500 text-sm text-center bg-red-100 bg-opacity-70 p-2 rounded">
+            {error}
+          </div>
         )}
 
-        <form onSubmit={handleLogin}>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm mb-2">Username</label>
+        <form onSubmit={handleLogin} className="space-y-10">
+          <div className="relative">
+            <FaUser className="absolute left-3 top-3 text-blue-800 opacity-70" />
             <input
               type="text"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-70 text-blue-900 placeholder-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter username"
+              placeholder="Username"
               required
             />
           </div>
 
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm mb-2">Password</label>
+          <div className="relative">
+            <FaLock className="absolute left-3 top-3 text-blue-800 opacity-70" />
             <input
               type="password"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-70 text-blue-900 placeholder-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
+              placeholder="Password"
               required
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition duration-200"
+            className="w-full bg-blue-700 text-white font-bold py-2 rounded-lg hover:bg-blue-800 transition duration-300 shadow-lg"
           >
             Login
           </button>

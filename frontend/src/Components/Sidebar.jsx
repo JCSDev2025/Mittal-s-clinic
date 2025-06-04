@@ -22,7 +22,7 @@ const Sidebar = () => {
   const menuItems = [
     { icon: <FaTachometerAlt />, label: 'Dashboard', path: '/' },
     { icon: <FaUserMd />, label: 'Doctors', path: '/doctors' },
-    { icon: <FaUsers />, label: 'Patients', path: '/patients' },
+    { icon: <FaUsers />, label: 'Clients', path: '/clients' },
     { icon: <FaStethoscope />, label: 'Services', path: '/services' },
     { icon: <FaCalendarCheck />, label: 'Appointments', path: '/appointments' },
     { icon: <FaFileInvoiceDollar />, label: 'Billing', path: '/billing' },

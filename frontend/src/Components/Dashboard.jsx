@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { FaUserMd, FaUsers, FaCalendarCheck, FaFileInvoiceDollar } from 'react-icons/fa';
+import { FaUserMd, FaFileInvoiceDollar } from 'react-icons/fa';
+import { MdPending } from 'react-icons/md';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -18,7 +19,6 @@ ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Title, T
 const Dashboard = () => {
   const [selectedRange, setSelectedRange] = useState('This Month');
 
-  // Dummy data for different time ranges
   const salesDataByRange = {
     'This Week': {
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -109,11 +109,10 @@ const Dashboard = () => {
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Clinic Management Dashboard</h1>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-        <DashboardCard icon={<FaUsers />} label="Total Patients" value="1280" color="bg-blue-500" />
-        <DashboardCard icon={<FaCalendarCheck />} label="Appointments Today" value="32" color="bg-green-500" />
-        <DashboardCard icon={<FaUserMd />} label="Available Doctors" value="15" color="bg-purple-500" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
         <DashboardCard icon={<FaFileInvoiceDollar />} label="Revenue" value="₹84,500" color="bg-yellow-500" />
+        <DashboardCard icon={<FaUserMd />} label="Available Doctors" value="15" color="bg-purple-500" />
+        <DashboardCard icon={<MdPending />} label="Pending Amount" value="₹25,000" color="bg-red-500" />
       </div>
 
       {/* Revenue Line Chart */}

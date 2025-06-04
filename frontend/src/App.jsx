@@ -2,17 +2,19 @@ import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './Components/Layout';
 import Dashboard from './Components/Dashboard';
-import Doctors from './Pages/Doctors';
-import Patients from './Pages/Patients';
-import Services from './Pages/Services';
-import Appointments from './Pages/Appointments';
-import Billing from './Pages/Billing';
+import Doctors from "./Pages/Staff/Doctors";
+import DoctorDetails from "./Pages/Staff/DoctorDetails";
+import Clients from "./Pages/Clients/Clients";
+import Services from "./Pages/Services/Services";
+import Appointments from "./Pages/Appoinments/Appointments";
+import Billing from "./Pages/Billing/Billing"
 import Reports from './Pages/Reports';
-import AddDoctor from './Pages/AddDoctor';
-import AddPatient from './Pages/AddPatient';
-import AddService from './Pages/AddService';
-import AddAppointment from './Pages/AddAppointment';
-import AddBilling from './Pages/AddBilling';
+import AddDoctor from "./Pages/Staff/AddDoctor";
+import AddClient from "./Pages/Clients/AddClient";
+import ClientDetails from "./Pages/Clients/ClientDetails";
+import AddService from "./Pages/Services/AddService";
+import AddAppointment from "./Pages/Appoinments/AddAppointment";
+import AddBilling from "./Pages/Billing/AddBilling";
 import Login from './Components/Login';
 
 function App() {
@@ -34,8 +36,10 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="doctors" element={<Doctors doctors={[]} setDoctors={() => {}} />} />
           <Route path="add-doctor" element={<AddDoctor doctors={[]} setDoctors={() => {}} />} />
-          <Route path="patients" element={<Patients patients={[]} setPatients={() => {}} />} />
-          <Route path="add-patient" element={<AddPatient patients={[]} setPatients={() => {}} />} />
+          <Route path="targets" element={<DoctorDetails />} />
+          <Route path="clients" element={<Clients clients={[]} setClients={() => {}} />} />
+          <Route path="add-client" element={<AddClient clientss={[]} setClients={() => {}} />} />
+          <Route path="client-details" element={<ClientDetails />} />
           <Route path="services" element={<Services services={[]} setServices={() => {}} />} />
           <Route path="add-service" element={<AddService services={[]} setServices={() => {}} />} />
           <Route path="appointments" element={<Appointments appointments={[]} setAppointments={() => {}} />} />
