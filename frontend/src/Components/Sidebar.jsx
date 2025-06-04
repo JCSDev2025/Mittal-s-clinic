@@ -27,7 +27,6 @@ const Sidebar = () => {
     { icon: <FaCalendarCheck />, label: 'Appointments', path: '/appointments' },
     { icon: <FaFileInvoiceDollar />, label: 'Billing', path: '/billing' },
     { icon: <FaChartBar />, label: 'Reports', path: '/reports' },
-    { icon: <FaCog />, label: 'Settings', path: '/settings' }
   ];
 
   return (
@@ -49,10 +48,6 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      {/* Logout */}
-      <div className="px-2 py-4 border-t border-gray-700">
-        <SidebarNavItem icon={<FaSignOutAlt />} label="Logout" path="/logout" isOpen={isOpen} />
-      </div>
     </div>
   );
 };
