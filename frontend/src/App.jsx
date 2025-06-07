@@ -4,6 +4,7 @@ import Layout from './Components/Layout';
 import Dashboard from './Components/Dashboard';
 import Doctors from "./Pages/Staff/Doctors";
 import DoctorDetails from "./Pages/Staff/DoctorDetails";
+import EditDoctor from './Pages/Staff/EditDoctor';
 import Clients from "./Pages/Clients/Clients";
 import Services from "./Pages/Services/Services";
 import Appointments from "./Pages/Appoinments/Appointments";
@@ -16,6 +17,8 @@ import AddService from "./Pages/Services/AddService";
 import AddAppointment from "./Pages/Appoinments/AddAppointment";
 import AddBilling from "./Pages/Billing/AddBilling";
 import Login from './Components/Login';
+import Staff from './Pages/Staff/Staff';
+import AddStaff from './Pages/Staff/AddStaff';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -37,6 +40,9 @@ function App() {
           <Route path="doctors" element={<Doctors doctors={[]} setDoctors={() => {}} />} />
           <Route path="add-doctor" element={<AddDoctor doctors={[]} setDoctors={() => {}} />} />
           <Route path="targets" element={<DoctorDetails />} />
+          <Route path="/edit-doctor/:id" element={<EditDoctor />} />
+          <Route path="staff" element={<Staff />} />
+          <Route path="add-staff" element={<AddStaff />} />
           <Route path="clients" element={<Clients clients={[]} setClients={() => {}} />} />
           <Route path="add-client" element={<AddClient clientss={[]} setClients={() => {}} />} />
           <Route path="client-details" element={<ClientDetails />} />

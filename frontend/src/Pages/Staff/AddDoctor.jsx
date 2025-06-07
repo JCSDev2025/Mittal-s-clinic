@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const AddDoctor = ({ doctors, setDoctors }) => {
   const [formData, setFormData] = useState({
@@ -10,7 +11,11 @@ const AddDoctor = ({ doctors, setDoctors }) => {
     experience: '',
     qualification: '',
     availability: '',
+    salary: '',
   });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const navigate = useNavigate();
 
@@ -19,15 +24,29 @@ const AddDoctor = ({ doctors, setDoctors }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const newDoctor = {
-      id: doctors.length + 1,
-      ...formData,
-    };
-    setDoctors([...doctors, newDoctor]);
-    navigate('/doctors');
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
+
+  // Prepare data with numeric fields converted
+  const dataToSend = {
+    ...formData,
+    experience: Number(formData.experience),
+    salary: Number(formData.salary),
   };
+
+  try {
+    const response = await axios.post('http://localhost:3000/api/doctors', dataToSend);
+    setDoctors([...doctors, response.data]);
+    navigate('/doctors');
+  } catch (err) {
+    setError(err.response?.data?.error || 'Something went wrong');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-white px-4 py-12">
@@ -37,7 +56,12 @@ const AddDoctor = ({ doctors, setDoctors }) => {
       >
         <h2 className="text-3xl font-extrabold text-center text-indigo-700 drop-shadow-sm">Add New Doctor</h2>
 
+        {error && (
+          <div className="bg-red-100 text-red-700 p-2 rounded">{error}</div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* All inputs same as your code */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Name</label>
             <input
@@ -62,6 +86,8 @@ const AddDoctor = ({ doctors, setDoctors }) => {
             />
           </div>
 
+          {/* Repeat the rest inputs like email, phone, experience, qualification, salary, availability */}
+          {/* ... */}
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
             <input
@@ -111,6 +137,19 @@ const AddDoctor = ({ doctors, setDoctors }) => {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Salary (₹)</label>
+            <input
+              type="number"
+              name="salary"
+              value={formData.salary}
+              onChange={handleChange}
+              required
+              min="0"
+              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
+            />
+          </div>
+
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700">Availability</label>
             <input
@@ -130,14 +169,16 @@ const AddDoctor = ({ doctors, setDoctors }) => {
             type="button"
             onClick={() => navigate('/doctors')}
             className="px-5 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-200 transition"
+            disabled={loading}
           >
             Cancel
           </button>
           <button
             type="submit"
             className="px-6 py-2 bg-indigo-600 text-white rounded-md font-semibold hover:bg-indigo-700 transition"
+            disabled={loading}
           >
-            Save Doctor
+            {loading ? 'Saving...' : 'Save Doctor'}
           </button>
         </div>
       </form>

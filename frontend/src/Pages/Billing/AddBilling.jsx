@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
 
-const AddBilling = ({ bills, setBills }) => {
+const AddBilling = () => {
   const [formData, setFormData] = useState({
-    clientId: '',
     clientName: '',
     assignedDoctor: '',
     services: '',
-    requiredSessions: '',
+    totalSessions: '',
+    sessionsCompleted: '',
     cost: '',
     amountPaid: '',
     date: '',
@@ -15,193 +16,223 @@ const AddBilling = ({ bills, setBills }) => {
     notes: '',
   });
 
+  const [clientOptions, setClientOptions] = useState([]);
+  const [doctorOptions, setDoctorOptions] = useState([]);
+  const [serviceOptions, setServiceOptions] = useState([]);
+  const [error, setError] = useState('');
+
   const navigate = useNavigate();
   const { id } = useParams();
 
-  // Example client and service options
-  const clientOptions = ['John Doe', 'Jane Smith', 'Alice Johnson'];
-  const serviceOptions = ['Physiotherapy', 'Counseling', 'Massage Therapy'];
+  useEffect(() => {
+    const fetchDropdownData = async () => {
+      try {
+        const [clients, doctors, services] = await Promise.all([
+          axios.get('/api/clients'),
+          axios.get('/api/doctors'),
+          axios.get('/api/services'),
+        ]);
+        setClientOptions(clients.data);
+        setDoctorOptions(doctors.data);
+        setServiceOptions(services.data);
+      } catch (err) {
+        console.error('Dropdown fetch error:', err);
+      }
+    };
+
+    fetchDropdownData();
+  }, []);
 
   useEffect(() => {
     if (id) {
-      const billToEdit = bills.find((b) => b.id === parseInt(id));
-      if (billToEdit) {
-        const {
-          clientId,
-          clientName,
-          assignedDoctor,
-          services,
-          requiredSessions,
-          cost,
-          amountPaid,
-          date,
-          paymentMethod,
-          notes,
-        } = billToEdit;
-        setFormData({
-          clientId,
-          clientName,
-          assignedDoctor,
-          services,
-          requiredSessions,
-          cost,
-          amountPaid,
-          date,
-          paymentMethod,
-          notes,
-        });
-      }
+      axios.get(`/api/bills/${id}`)
+        .then((res) => {
+          const bill = res.data;
+          setFormData({
+            clientName: bill.clientName,
+            assignedDoctor: bill.assignedDoctor,
+            services: bill.services,
+            totalSessions: bill.totalSessions,
+            sessionsCompleted: bill.sessionsCompleted,
+            cost: bill.cost,
+            amountPaid: bill.amountPaid,
+            date: bill.date.split('T')[0],
+            paymentMethod: bill.paymentMethod,
+            notes: bill.notes,
+          });
+        })
+        .catch((err) => console.error('Error loading bill:', err));
     }
-  }, [id, bills]);
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (id) {
-      const updatedBills = bills.map((b) =>
-        b.id === parseInt(id) ? { ...formData, id: parseInt(id) } : b
-      );
-      setBills(updatedBills);
-    } else {
-      const newBill = {
-        id: bills.length + 1,
-        ...formData,
-      };
-      setBills([...bills, newBill]);
+    setError('');
+
+    if (!formData.clientName || !formData.services || !formData.date || !formData.assignedDoctor || !formData.totalSessions || !formData.sessionsCompleted) {
+      setError('Please fill all required fields.');
+      return;
     }
 
-    navigate('/billing');
+    try {
+      if (id) {
+        await axios.put(`/api/bills/${id}`, formData);
+      } else {
+        await axios.post('/api/bills', formData);
+      }
+      navigate('/billing');
+    } catch (err) {
+      console.error('Error saving bill:', err);
+      setError('Error saving bill. Please try again.');
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-100 to-white px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-green-50 via-white to-green-50 px-6 py-12">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-3xl space-y-6"
+        className="bg-white shadow-xl rounded-3xl w-full max-w-4xl p-10 sm:p-12 md:p-16"
       >
-        <h2 className="text-3xl font-extrabold text-center text-green-700 drop-shadow-sm">
+        <h2 className="text-4xl font-extrabold text-center text-green-800 mb-8 drop-shadow-md">
           {id ? 'Edit Bill' : 'Add New Bill'}
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Client ID</label>
-            <input
-              type="text"
-              name="clientId"
-              value={formData.clientId}
-              onChange={handleChange}
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
-            />
+        {error && (
+          <div className="bg-red-100 text-red-700 text-center py-2 rounded-md mb-6 font-semibold shadow-sm">
+            {error}
           </div>
+        )}
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/** Select Inputs */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Client Name</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Client Name <span className="text-red-500">*</span></label>
             <select
               name="clientName"
               value={formData.clientName}
               onChange={handleChange}
               required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
             >
               <option value="">Select Client</option>
-              {clientOptions.map((client) => (
-                <option key={client} value={client}>
-                  {client}
-                </option>
+              {clientOptions.map(client => (
+                <option key={client._id} value={client.name}>{client.name}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Assigned Doctor</label>
-            <input
-              type="text"
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Assigned Doctor <span className="text-red-500">*</span></label>
+            <select
               name="assignedDoctor"
               value={formData.assignedDoctor}
               onChange={handleChange}
               required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
-            />
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
+            >
+              <option value="">Select Doctor</option>
+              {doctorOptions.map(doctor => (
+                <option key={doctor._id} value={doctor.name}>{doctor.name}</option>
+              ))}
+            </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Services</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Service <span className="text-red-500">*</span></label>
             <select
               name="services"
               value={formData.services}
               onChange={handleChange}
               required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
             >
               <option value="">Select Service</option>
-              {serviceOptions.map((service) => (
-                <option key={service} value={service}>
-                  {service}
-                </option>
+              {serviceOptions.map(service => (
+                <option key={service._id} value={service.name}>{service.name}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Required Sessions</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Total Sessions <span className="text-red-500">*</span></label>
             <input
               type="number"
-              name="requiredSessions"
-              value={formData.requiredSessions}
+              name="totalSessions"
+              value={formData.totalSessions}
               onChange={handleChange}
               required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+              min="1"
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
+              placeholder="Enter total number of sessions"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Cost ($)</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Sessions Completed <span className="text-red-500">*</span></label>
+            <input
+              type="number"
+              name="sessionsCompleted"
+              value={formData.sessionsCompleted}
+              onChange={handleChange}
+              required
+              min="0"
+              max={formData.totalSessions || undefined}
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
+              placeholder="Enter sessions completed"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Cost (₹)</label>
             <input
               type="number"
               name="cost"
               value={formData.cost}
               onChange={handleChange}
-              required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+              min="0"
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
+              placeholder="Total cost"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Amount Paid ($)</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Amount Paid (₹)</label>
             <input
               type="number"
               name="amountPaid"
               value={formData.amountPaid}
               onChange={handleChange}
-              required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+              min="0"
+              max={formData.cost || undefined}
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
+              placeholder="Amount paid"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Date</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Date <span className="text-red-500">*</span></label>
             <input
               type="date"
               name="date"
               value={formData.date}
               onChange={handleChange}
               required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Payment Method</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Method</label>
             <select
               name="paymentMethod"
               value={formData.paymentMethod}
               onChange={handleChange}
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
             >
               <option value="">Select</option>
               <option value="Cash">Cash</option>
@@ -212,28 +243,29 @@ const AddBilling = ({ bills, setBills }) => {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Remarks / Notes</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Remarks</label>
             <textarea
               name="notes"
-              rows="3"
+              rows="4"
               value={formData.notes}
               onChange={handleChange}
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-400"
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm resize-none"
+              placeholder="Additional remarks or notes"
             ></textarea>
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 pt-4">
+        <div className="flex justify-end gap-6 mt-10">
           <button
             type="button"
             onClick={() => navigate('/billing')}
-            className="px-5 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-200 transition"
+            className="px-7 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 transition duration-300"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-6 py-2 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700 transition"
+            className="px-8 py-3 bg-green-700 text-white rounded-lg font-bold hover:bg-green-800 shadow-lg transition duration-300"
           >
             {id ? 'Update Bill' : 'Save Bill'}
           </button>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-const AddService = ({ services, setServices }) => {
+const AddService = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -17,7 +18,7 @@ const AddService = ({ services, setServices }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const { name, description, price, category, sessions } = formData;
 
@@ -32,54 +33,64 @@ const AddService = ({ services, setServices }) => {
       isNaN(sessions) ||
       Number(sessions) < 1
     ) {
+      alert('Please fill all fields correctly.');
       return;
     }
 
-    const newService = {
-      id: services.length > 0 ? services[services.length - 1].id + 1 : 1,
-      ...formData,
-      price: Number(price),
-      sessions: Number(sessions),
-    };
-
-    setServices([...services, newService]);
-    navigate('/services');
+    try {
+      await axios.post('http://localhost:3000/api/services', {
+        name,
+        description,
+        price: Number(price),
+        category,
+        sessions: Number(sessions),
+      });
+      navigate('/services');
+    } catch (error) {
+      console.error('Error adding service:', error);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 to-white px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-indigo-100 via-purple-100 to-pink-100 px-6 py-16">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl space-y-6"
+        className="bg-white max-w-3xl w-full rounded-3xl shadow-2xl p-10 sm:p-12 lg:p-16 space-y-8"
       >
-        <h2 className="text-3xl font-extrabold text-center text-indigo-700 drop-shadow-sm">
+        <h2 className="text-4xl font-extrabold text-center text-indigo-700 drop-shadow-md mb-6">
           Add New Service
         </h2>
 
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Service Name</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="flex flex-col">
+            <label className="mb-2 text-gray-700 font-semibold tracking-wide">Service Name</label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
               required
-              placeholder="Service name"
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
+              placeholder="Enter service name"
+              className="rounded-xl border border-gray-300 px-5 py-3 text-lg placeholder-gray-400
+                focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-600
+                shadow-sm transition"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Category</label>
+          <div className="flex flex-col">
+            <label className="mb-2 text-gray-700 font-semibold tracking-wide">Category</label>
             <select
               name="category"
               value={formData.category}
               onChange={handleChange}
               required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
+              className="rounded-xl border border-gray-300 px-5 py-3 text-lg placeholder-gray-400
+                focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-600
+                shadow-sm transition"
             >
-              <option value="" disabled>Select Category</option>
+              <option value="" disabled>
+                Select Category
+              </option>
               <option value="Hair">Hair</option>
               <option value="Skin">Skin</option>
               <option value="Dental">Dental</option>
@@ -88,21 +99,23 @@ const AddService = ({ services, setServices }) => {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
+          <div className="md:col-span-2 flex flex-col">
+            <label className="mb-2 text-gray-700 font-semibold tracking-wide">Description</label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
               required
-              placeholder="Service description"
-              rows={4}
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400 resize-none"
+              rows={5}
+              placeholder="Describe the service"
+              className="rounded-xl border border-gray-300 px-5 py-4 text-lg placeholder-gray-400
+                focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-600
+                shadow-sm transition resize-none"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Price (₹)</label>
+          <div className="flex flex-col">
+            <label className="mb-2 text-gray-700 font-semibold tracking-wide">Price (₹)</label>
             <input
               type="number"
               name="price"
@@ -110,13 +123,15 @@ const AddService = ({ services, setServices }) => {
               onChange={handleChange}
               required
               min="0"
-              placeholder="Enter price"
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
+              placeholder="0"
+              className="rounded-xl border border-gray-300 px-5 py-3 text-lg placeholder-gray-400
+                focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-600
+                shadow-sm transition"
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Required Sessions</label>
+          <div className="flex flex-col">
+            <label className="mb-2 text-gray-700 font-semibold tracking-wide">Required Sessions</label>
             <input
               type="number"
               name="sessions"
@@ -124,23 +139,27 @@ const AddService = ({ services, setServices }) => {
               onChange={handleChange}
               required
               min="1"
-              placeholder="Enter number of sessions"
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
+              placeholder="1"
+              className="rounded-xl border border-gray-300 px-5 py-3 text-lg placeholder-gray-400
+                focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-600
+                shadow-sm transition"
             />
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 pt-4">
+        <div className="flex justify-end space-x-6 mt-6">
           <button
             type="button"
             onClick={() => navigate('/services')}
-            className="px-5 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-200 transition"
+            className="px-7 py-3 rounded-full border border-gray-300 text-gray-700 font-semibold
+              hover:bg-gray-100 transition shadow-sm"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-6 py-2 bg-indigo-600 text-white rounded-md font-semibold hover:bg-indigo-700 transition"
+            className="px-8 py-3 rounded-full bg-indigo-600 text-white font-semibold
+              hover:bg-indigo-700 transition shadow-lg"
           >
             Save Service
           </button>

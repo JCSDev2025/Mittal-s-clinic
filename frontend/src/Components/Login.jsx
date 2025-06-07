@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaUser, FaLock } from 'react-icons/fa';
 import BackgroundImg from "../assets/Log2.webp";
+import Logo from "../assets/Logo.webp";
 
 const Login = ({ setIsAuthenticated }) => {
   const [username, setUsername] = useState('');
@@ -9,7 +10,6 @@ const Login = ({ setIsAuthenticated }) => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-
     if (username === 'Admin' && password === '123456789') {
       setIsAuthenticated(true);
       setError('');
@@ -18,56 +18,68 @@ const Login = ({ setIsAuthenticated }) => {
     }
   };
 
-  return (
-    <div
-      className="min-h-screen flex items-center justify-start bg-cover bg-no-repeat"
-      style={{ backgroundImage: `url(${BackgroundImg})` }}
-    >
-      <div className="bg-white bg-opacity-30 backdrop-blur-md rounded-xl shadow-2xl p-8 w-full max-w-md ml-28 animate-fade-in">
-
-        <h2 className="text-3xl font-bold text-blue-900 text-center mb-6 drop-shadow-md">Welcome Back</h2>
-
-        {error && (
-          <div className="mb-4 text-red-500 text-sm text-center bg-red-100 bg-opacity-70 p-2 rounded">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleLogin} className="space-y-10">
-          <div className="relative">
-            <FaUser className="absolute left-3 top-3 text-blue-800 opacity-70" />
-            <input
-              type="text"
-              className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-70 text-blue-900 placeholder-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Username"
-              required
-            />
-          </div>
-
-          <div className="relative">
-            <FaLock className="absolute left-3 top-3 text-blue-800 opacity-70" />
-            <input
-              type="password"
-              className="w-full pl-10 pr-4 py-2 bg-white bg-opacity-70 text-blue-900 placeholder-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-blue-700 text-white font-bold py-2 rounded-lg hover:bg-blue-800 transition duration-300 shadow-lg"
-          >
-            Login
-          </button>
-        </form>
+ return (
+  <div
+    className="min-h-screen w-full bg-cover bg-center bg-no-repeat flex items-center justify-center px-4"
+    style={{ backgroundImage: `url(${BackgroundImg})` }}
+  >
+    <div className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl xl:max-w-xl bg-white/20 backdrop-blur-md rounded-2xl shadow-2xl px-8 sm:px-12 py-10 sm:py-12 animate-fade-in transition-all duration-500 text-center">
+      
+      {/* Logo */}
+      <div className="flex justify-center mb-6">
+        <img
+          src={Logo}
+          alt="Mittal Clinic Logo"
+          className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded-full shadow-lg "
+        />
       </div>
+
+      <h2 className="text-4xl font-extrabold text-blue-900 mb-6 tracking-wide drop-shadow-sm">
+        Welcome Back
+      </h2>
+
+      {error && (
+        <div className="mb-4 text-red-600 text-sm text-center bg-red-100 border border-red-300 bg-opacity-80 px-4 py-2 rounded-lg shadow-sm">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleLogin} className="space-y-8">
+        <div className="relative">
+          <FaUser className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-800 text-lg" />
+          <input
+            type="text"
+            className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/80 placeholder-blue-700 text-blue-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Enter your username"
+            required
+          />
+        </div>
+
+        <div className="relative">
+          <FaLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-800 text-lg" />
+          <input
+            type="password"
+            className="w-full pl-12 pr-4 py-3 rounded-lg bg-white/80 placeholder-blue-700 text-blue-900 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter your password"
+            required
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 shadow-lg transition duration-300"
+        >
+          Sign In
+        </button>
+      </form>
     </div>
-  );
+  </div>
+);
+
 };
 
 export default Login;

@@ -1,190 +1,265 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
-const AddAppointment = ({ appointments, setAppointments }) => {
+const AddAppointment = () => {
   const [formData, setFormData] = useState({
     clientName: '',
     age: '',
     gender: '',
     contact: '',
-    symptoms: '',
-    appointmentType: '',
+    service: '',
     doctorName: '',
-    specialization: '',
     date: '',
     time: '',
   });
 
+  const [clients, setClients] = useState([]);
+  const [services, setServices] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/clients');
+        setClients(response.data);
+      } catch (error) {
+        console.error('Failed to fetch clients:', error);
+      }
+    };
+    fetchClients();
+  }, []);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/services');
+        setServices(response.data);
+      } catch (error) {
+        console.error('Failed to fetch services:', error);
+      }
+    };
+    fetchServices();
+  }, []);
+
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/api/doctors');
+        setDoctors(response.data);
+      } catch (error) {
+        console.error('Failed to fetch doctors:', error);
+      }
+    };
+    fetchDoctors();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === 'clientName') {
+      const selectedClient = clients.find(client => client.name === value);
+
+      if (selectedClient) {
+        setFormData(prev => ({
+          ...prev,
+          clientName: selectedClient.name,
+          age: selectedClient.age || '',
+          gender: selectedClient.gender || '',
+          contact: selectedClient.mobile || '',
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          clientName: '',
+          age: '',
+          gender: '',
+          contact: '',
+        }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newAppointment = {
-      id: appointments.length + 1,
-      ...formData,
-    };
-    setAppointments([...appointments, newAppointment]);
-    navigate('/appointments');
+    try {
+      await axios.post('http://localhost:3000/api/appointments', formData);
+      alert('Appointment added successfully');
+      navigate('/appointments');
+    } catch (error) {
+      console.error('Error adding appointment:', error);
+      alert('Failed to add appointment');
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-100 to-white px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-cyan-50 via-teal-50 to-cyan-50 px-6 py-12">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl space-y-6"
+        className="bg-white shadow-xl rounded-3xl max-w-3xl w-full p-10 sm:p-12 md:p-16
+                   grid grid-cols-1 gap-8 sm:grid-cols-2"
+        style={{ boxShadow: '0 20px 40px rgba(0, 128, 128, 0.15)' }}
       >
-        <h2 className="text-3xl font-extrabold text-center text-teal-700">Add Appointment</h2>
+        <h2 className="sm:col-span-2 text-center text-4xl font-extrabold text-teal-800 tracking-tight mb-4">
+          Add New Appointment
+        </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Client Name</label>
-            <input
-              type="text"
-              name="clientName"
-              value={formData.clientName}
-              onChange={handleChange}
-              required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-teal-400"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Age</label>
-            <input
-              type="number"
-              name="age"
-              value={formData.age}
-              onChange={handleChange}
-              required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-teal-400"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Gender</label>
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleChange}
-              required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-teal-400"
-            >
-              <option value="">Select</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Contact Number</label>
-            <input
-              type="tel"
-              name="contact"
-              value={formData.contact}
-              onChange={handleChange}
-              required
-              pattern="[0-9]{10}"
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-teal-400"
-              placeholder="10-digit mobile number"
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">Symptoms</label>
-            <textarea
-              name="symptoms"
-              value={formData.symptoms}
-              onChange={handleChange}
-              required
-              rows={2}
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-teal-400"
-              placeholder="Describe the symptoms briefly"
-            ></textarea>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Appointment Type</label>
-            <select
-              name="appointmentType"
-              value={formData.appointmentType}
-              onChange={handleChange}
-              required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-teal-400"
-            >
-              <option value="">Select</option>
-              <option value="General Checkup">General Checkup</option>
-              <option value="Emergency">Emergency</option>
-              <option value="Follow-up">Follow-up</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Doctor Name</label>
-            <input
-              type="text"
-              name="doctorName"
-              value={formData.doctorName}
-              onChange={handleChange}
-              required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-teal-400"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Doctor Specialization</label>
-            <input
-              type="text"
-              name="specialization"
-              value={formData.specialization}
-              onChange={handleChange}
-              required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-teal-400"
-              placeholder="e.g., Cardiologist, Dermatologist"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Date</label>
-            <input
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-teal-400"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Time</label>
-            <input
-              type="time"
-              name="time"
-              value={formData.time}
-              onChange={handleChange}
-              required
-              className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-teal-400"
-            />
-          </div>
+        {/* Client Name */}
+        <div className="flex flex-col">
+          <label className="mb-2 font-semibold text-gray-700">Client Name</label>
+          <select
+            name="clientName"
+            value={formData.clientName}
+            onChange={handleChange}
+            required
+            className="rounded-lg border border-gray-300 px-4 py-3 text-gray-900
+                       focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+          >
+            <option value="">Select Client</option>
+            {clients.map(client => (
+              <option key={client._id} value={client.name}>
+                {client.name}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="flex justify-end gap-4 pt-6">
+        {/* Age */}
+        <div className="flex flex-col">
+          <label className="mb-2 font-semibold text-gray-700">Age</label>
+          <input
+            type="number"
+            name="age"
+            value={formData.age}
+            onChange={handleChange}
+            required
+            placeholder="Age"
+            className="rounded-lg border border-gray-300 px-4 py-3 text-gray-900
+                       focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+            min={0}
+          />
+        </div>
+
+        {/* Gender */}
+        <div className="flex flex-col">
+          <label className="mb-2 font-semibold text-gray-700">Gender</label>
+          <select
+            name="gender"
+            value={formData.gender}
+            onChange={handleChange}
+            required
+            className="rounded-lg border border-gray-300 px-4 py-3 text-gray-900
+                       focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+          >
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        {/* Contact */}
+        <div className="flex flex-col">
+          <label className="mb-2 font-semibold text-gray-700">Contact Number</label>
+          <input
+            type="tel"
+            name="contact"
+            value={formData.contact}
+            onChange={handleChange}
+            required
+            placeholder="10-digit mobile number"
+            pattern="[0-9]{10}"
+            className="rounded-lg border border-gray-300 px-4 py-3 text-gray-900
+                       focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+          />
+        </div>
+
+        {/* Service */}
+        <div className="flex flex-col">
+          <label className="mb-2 font-semibold text-gray-700">Service</label>
+          <select
+            name="service"
+            value={formData.service}
+            onChange={handleChange}
+            required
+            className="rounded-lg border border-gray-300 px-4 py-3 text-gray-900
+                       focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+          >
+            <option value="">Select Service</option>
+            {services.map(service => (
+              <option key={service._id} value={service.name}>
+                {service.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Doctor */}
+        <div className="flex flex-col">
+          <label className="mb-2 font-semibold text-gray-700">Doctor Name</label>
+          <select
+            name="doctorName"
+            value={formData.doctorName}
+            onChange={handleChange}
+            required
+            className="rounded-lg border border-gray-300 px-4 py-3 text-gray-900
+                       focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+          >
+            <option value="">Select Doctor</option>
+            {doctors.map(doctor => (
+              <option key={doctor._id} value={doctor.name}>
+                {doctor.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Date */}
+        <div className="flex flex-col">
+          <label className="mb-2 font-semibold text-gray-700">Date</label>
+          <input
+            type="date"
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+            required
+            className="rounded-lg border border-gray-300 px-4 py-3 text-gray-900
+                       focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+          />
+        </div>
+
+        {/* Time */}
+        <div className="flex flex-col">
+          <label className="mb-2 font-semibold text-gray-700">Time</label>
+          <input
+            type="time"
+            name="time"
+            value={formData.time}
+            onChange={handleChange}
+            required
+            className="rounded-lg border border-gray-300 px-4 py-3 text-gray-900
+                       focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+          />
+        </div>
+
+        {/* Buttons - full width on small screens */}
+        <div className="sm:col-span-2 flex justify-end gap-6 mt-6">
           <button
             type="button"
             onClick={() => navigate('/appointments')}
-            className="px-5 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-200"
+            className="rounded-lg border border-gray-300 px-8 py-3 text-gray-700 font-semibold
+                       hover:bg-gray-100 transition"
           >
             Cancel
           </button>
           <button
             type="submit"
-            className="px-6 py-2 bg-teal-600 text-white rounded-md font-semibold hover:bg-teal-700"
+            className="rounded-lg bg-teal-600 px-8 py-3 text-white font-semibold
+                       hover:bg-teal-700 transition shadow-lg"
           >
             Save Appointment
           </button>
