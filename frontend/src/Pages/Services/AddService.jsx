@@ -11,36 +11,88 @@ const AddService = () => {
     sessions: '',
   });
 
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Validation on input for 'name' (service name)
+    if (name === 'name') {
+      // Allow letters, numbers, dots, commas, hyphens, spaces
+      const validPattern = /^[a-zA-Z0-9.,-\s]*$/;
+      if (!validPattern.test(value)) return; // ignore invalid input
+    }
+
+    // For price and sessions, allow only digits (and for price also allow empty input)
+    if (name === 'price') {
+      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+        setFormData((prev) => ({ ...prev, [name]: value }));
+      }
+      return;
+    }
+
+    if (name === 'sessions') {
+      // allow only digits
+      if (value === '' || /^\d*$/.test(value)) {
+        setFormData((prev) => ({ ...prev, [name]: value }));
+      }
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+
     const { name, description, price, category, sessions } = formData;
 
-    if (
-      name.trim() === '' ||
-      description.trim() === '' ||
-      price === '' ||
-      isNaN(price) ||
-      Number(price) < 0 ||
-      category === '' ||
-      sessions === '' ||
-      isNaN(sessions) ||
-      Number(sessions) < 1
-    ) {
-      alert('Please fill all fields correctly.');
+    // Validation on submit
+    if (!name.trim()) {
+      setError('Service Name is required.');
+      return;
+    }
+    if (!/^[a-zA-Z0-9.,-\s]+$/.test(name.trim())) {
+      setError(
+        'Service Name can only contain letters, numbers, spaces, dots (.), commas (,), and hyphens (-).'
+      );
+      return;
+    }
+
+    if (!description.trim()) {
+      setError('Description is required.');
+      return;
+    }
+
+    if (price === '') {
+      setError('Price is required.');
+      return;
+    }
+    if (isNaN(price) || Number(price) < 0) {
+      setError('Price must be a positive number or zero.');
+      return;
+    }
+
+    if (!category) {
+      setError('Category is required.');
+      return;
+    }
+
+    if (sessions === '') {
+      setError('Required Sessions is required.');
+      return;
+    }
+    if (!/^\d+$/.test(sessions) || Number(sessions) < 1) {
+      setError('Required Sessions must be a positive integer.');
       return;
     }
 
     try {
       await axios.post('http://localhost:3000/api/services', {
-        name,
-        description,
+        name: name.trim(),
+        description: description.trim(),
         price: Number(price),
         category,
         sessions: Number(sessions),
@@ -48,6 +100,7 @@ const AddService = () => {
       navigate('/services');
     } catch (error) {
       console.error('Error adding service:', error);
+      setError('Failed to add service. Please try again.');
     }
   };
 
@@ -56,10 +109,17 @@ const AddService = () => {
       <form
         onSubmit={handleSubmit}
         className="bg-white max-w-3xl w-full rounded-3xl shadow-2xl p-10 sm:p-12 lg:p-16 space-y-8"
+        noValidate
       >
         <h2 className="text-4xl font-extrabold text-center text-indigo-700 drop-shadow-md mb-6">
           Add New Service
         </h2>
+
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-center mb-4">
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="flex flex-col">
@@ -123,6 +183,7 @@ const AddService = () => {
               onChange={handleChange}
               required
               min="0"
+              step="0.01"
               placeholder="0"
               className="rounded-xl border border-gray-300 px-5 py-3 text-lg placeholder-gray-400
                 focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-600
@@ -139,6 +200,7 @@ const AddService = () => {
               onChange={handleChange}
               required
               min="1"
+              step="1"
               placeholder="1"
               className="rounded-xl border border-gray-300 px-5 py-3 text-lg placeholder-gray-400
                 focus:outline-none focus:ring-4 focus:ring-indigo-300 focus:border-indigo-600

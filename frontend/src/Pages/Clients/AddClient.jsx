@@ -17,7 +17,37 @@ const AddClient = ({ clients = [], setClients }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Name: allow only alphabets, spaces, and dots
+    if (name === 'name') {
+      const cleaned = value.replace(/[^a-zA-Z.\s]/g, '');
+      setFormData((prev) => ({ ...prev, [name]: cleaned }));
+      return;
+    }
+
+    // Age: allow only positive numbers (no decimals)
+    if (name === 'age' && value) {
+      if (!/^\d*$/.test(value)) return; // disallow non-digits
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      return;
+    }
+
+    // Mobile: allow only digits, max 10
+    if (name === 'mobile' && value) {
+      if (!/^\d{0,10}$/.test(value)) return;
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      return;
+    }
+
+    // For other fields, accept any value
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleKeyDown = (e) => {
+    const allowed = /^[a-zA-Z.\s]$/;
+    if (e.target.name === 'name' && !allowed.test(e.key) && e.key.length === 1) {
+      e.preventDefault();
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -26,8 +56,33 @@ const AddClient = ({ clients = [], setClients }) => {
 
     const { name, age, mobile, address, dob, gender } = formData;
 
-    if (!name.trim() || isNaN(age) || Number(age) <= 0 || !mobile.trim() || !dob || !gender) {
-      setError('Please fill all required fields correctly.');
+    if (!name.trim() || !/^[a-zA-Z.\s]+$/.test(name)) {
+      setError('Name must contain only alphabets, spaces, or periods.');
+      return;
+    }
+
+    if (!age || isNaN(age) || Number(age) <= 0) {
+      setError('Please enter a valid positive numeric age.');
+      return;
+    }
+
+    if (!mobile || !/^\d{10}$/.test(mobile)) {
+      setError('Mobile number must be exactly 10 digits.');
+      return;
+    }
+
+    if (!address.trim()) {
+      setError('Address is required.');
+      return;
+    }
+
+    if (!dob) {
+      setError('Date of Birth is required.');
+      return;
+    }
+
+    if (!gender) {
+      setError('Gender selection is required.');
       return;
     }
 
@@ -36,7 +91,7 @@ const AddClient = ({ clients = [], setClients }) => {
         name: name.trim(),
         age: Number(age),
         mobile,
-        address,
+        address: address.trim(),
         dob,
         gender,
       });
@@ -64,11 +119,14 @@ const AddClient = ({ clients = [], setClients }) => {
         )}
 
         <div>
-          <label className="block text-gray-700 font-medium">Full Name <span className="text-red-500">*</span></label>
+          <label className="block text-gray-700 font-medium">
+            Full Name <span className="text-red-500">*</span>
+          </label>
           <input
             name="name"
             value={formData.name}
             onChange={handleChange}
+            onKeyDown={handleKeyDown}
             type="text"
             required
             placeholder="John Doe"
@@ -78,7 +136,9 @@ const AddClient = ({ clients = [], setClients }) => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label className="block text-gray-700 font-medium">Age <span className="text-red-500">*</span></label>
+            <label className="block text-gray-700 font-medium">
+              Age <span className="text-red-500">*</span>
+            </label>
             <input
               name="age"
               value={formData.age}
@@ -91,27 +151,37 @@ const AddClient = ({ clients = [], setClients }) => {
             />
           </div>
 
-          <div>
-            <label className="block text-gray-700 font-medium">Mobile No. <span className="text-red-500">*</span></label>
-            <input
-              name="mobile"
-              value={formData.mobile}
-              onChange={handleChange}
-              type="tel"
-              pattern="[0-9]{10}"
-              required
-              placeholder="1234567890"
-              className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
+         <div>
+  <label className="block text-gray-700 font-medium">
+    Mobile No. <span className="text-red-500">*</span>
+  </label>
+  <div className="flex items-center gap-2">
+    <span className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md">+91</span>
+    <input
+      name="mobile"
+      value={formData.mobile}
+      onChange={handleChange}
+      type="tel"
+      required
+      placeholder="1234567890"
+      pattern="\d{10}"
+      maxLength="10"
+      className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+    />
+  </div>
+</div>
+
         </div>
 
         <div>
-          <label className="block text-gray-700 font-medium">Address</label>
+          <label className="block text-gray-700 font-medium">
+            Address <span className="text-red-500">*</span>
+          </label>
           <textarea
             name="address"
             value={formData.address}
             onChange={handleChange}
+            required
             rows="3"
             placeholder="123 Main St, City, Country"
             className="w-full mt-1 px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -120,7 +190,9 @@ const AddClient = ({ clients = [], setClients }) => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label className="block text-gray-700 font-medium">Date of Birth <span className="text-red-500">*</span></label>
+            <label className="block text-gray-700 font-medium">
+              Date of Birth <span className="text-red-500">*</span>
+            </label>
             <input
               name="dob"
               value={formData.dob}
@@ -132,7 +204,9 @@ const AddClient = ({ clients = [], setClients }) => {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium">Gender <span className="text-red-500">*</span></label>
+            <label className="block text-gray-700 font-medium">
+              Gender <span className="text-red-500">*</span>
+            </label>
             <div className="flex gap-6 mt-2">
               {['Male', 'Female', 'Other'].map((g) => (
                 <label key={g} className="flex items-center gap-2">

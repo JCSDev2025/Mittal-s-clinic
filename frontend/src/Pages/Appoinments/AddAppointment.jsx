@@ -7,18 +7,20 @@ const AddAppointment = () => {
     clientName: '',
     age: '',
     gender: '',
-    contact: '',
+    contact: '+91',   // default +91
     service: '',
     doctorName: '',
     date: '',
     time: '',
   });
 
+  const navigate = useNavigate();
+
   const [clients, setClients] = useState([]);
   const [services, setServices] = useState([]);
   const [doctors, setDoctors] = useState([]);
 
-  const navigate = useNavigate();
+  const [contactError, setContactError] = useState('');
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -56,6 +58,13 @@ const AddAppointment = () => {
     fetchDoctors();
   }, []);
 
+  // Validate contact number (only digits after +91 and exactly 10 digits)
+  const validateContact = (contact) => {
+    // contact should start with +91 and followed by exactly 10 digits
+    const regex = /^\+91[0-9]{10}$/;
+    return regex.test(contact);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -68,7 +77,7 @@ const AddAppointment = () => {
           clientName: selectedClient.name,
           age: selectedClient.age || '',
           gender: selectedClient.gender || '',
-          contact: selectedClient.mobile || '',
+          contact: selectedClient.mobile ? (selectedClient.mobile.startsWith('+91') ? selectedClient.mobile : '+91' + selectedClient.mobile) : '+91',
         }));
       } else {
         setFormData(prev => ({
@@ -76,8 +85,30 @@ const AddAppointment = () => {
           clientName: '',
           age: '',
           gender: '',
-          contact: '',
+          contact: '+91',
         }));
+      }
+    } else if (name === 'contact') {
+      // Ensure value starts with +91
+      if (!value.startsWith('+91')) {
+        setFormData(prev => ({ ...prev, contact: '+91' }));
+        setContactError('Contact number must start with +91');
+        return;
+      }
+      // Remove all non-digit chars except + in start
+      let digitsPart = value.slice(3); // part after +91
+      // Only allow digits for digitsPart
+      digitsPart = digitsPart.replace(/\D/g, '');
+      // Limit length to 10 digits
+      if (digitsPart.length > 10) digitsPart = digitsPart.slice(0, 10);
+      const newContact = '+91' + digitsPart;
+      setFormData(prev => ({ ...prev, contact: newContact }));
+
+      // Validate length
+      if (digitsPart.length < 10) {
+        setContactError('Contact number must be 10 digits after +91');
+      } else {
+        setContactError('');
       }
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -86,6 +117,27 @@ const AddAppointment = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate all required fields manually if needed (they have required attribute, but just extra check)
+    if (
+      !formData.clientName ||
+      !formData.age ||
+      !formData.gender ||
+      !formData.contact ||
+      !formData.service ||
+      !formData.doctorName ||
+      !formData.date ||
+      !formData.time
+    ) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    if (!validateContact(formData.contact)) {
+      alert('Please enter a valid contact number starting with +91 and followed by 10 digits.');
+      return;
+    }
+
     try {
       await axios.post('http://localhost:3000/api/appointments', formData);
       alert('Appointment added successfully');
@@ -110,7 +162,7 @@ const AddAppointment = () => {
 
         {/* Client Name */}
         <div className="flex flex-col">
-          <label className="mb-2 font-semibold text-gray-700">Client Name</label>
+          <label className="mb-2 font-semibold text-gray-700">Client Name<span className="text-red-600">*</span></label>
           <select
             name="clientName"
             value={formData.clientName}
@@ -130,7 +182,7 @@ const AddAppointment = () => {
 
         {/* Age */}
         <div className="flex flex-col">
-          <label className="mb-2 font-semibold text-gray-700">Age</label>
+          <label className="mb-2 font-semibold text-gray-700">Age<span className="text-red-600">*</span></label>
           <input
             type="number"
             name="age"
@@ -146,7 +198,7 @@ const AddAppointment = () => {
 
         {/* Gender */}
         <div className="flex flex-col">
-          <label className="mb-2 font-semibold text-gray-700">Gender</label>
+          <label className="mb-2 font-semibold text-gray-700">Gender<span className="text-red-600">*</span></label>
           <select
             name="gender"
             value={formData.gender}
@@ -164,23 +216,28 @@ const AddAppointment = () => {
 
         {/* Contact */}
         <div className="flex flex-col">
-          <label className="mb-2 font-semibold text-gray-700">Contact Number</label>
+          <label className="mb-2 font-semibold text-gray-700">Contact Number<span className="text-red-600">*</span></label>
           <input
-            type="tel"
+            type="text"
             name="contact"
             value={formData.contact}
             onChange={handleChange}
             required
-            placeholder="10-digit mobile number"
-            pattern="[0-9]{10}"
+            maxLength={13} // +91 + 10 digits = 13 chars
             className="rounded-lg border border-gray-300 px-4 py-3 text-gray-900
                        focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+            placeholder="+91XXXXXXXXXX"
+            pattern="\+91[0-9]{10}"
+            title="Contact number must start with +91 and contain 10 digits after it."
           />
+          {contactError && (
+            <p className="text-red-600 mt-1 text-sm">{contactError}</p>
+          )}
         </div>
 
         {/* Service */}
         <div className="flex flex-col">
-          <label className="mb-2 font-semibold text-gray-700">Service</label>
+          <label className="mb-2 font-semibold text-gray-700">Service<span className="text-red-600">*</span></label>
           <select
             name="service"
             value={formData.service}
@@ -200,7 +257,7 @@ const AddAppointment = () => {
 
         {/* Doctor */}
         <div className="flex flex-col">
-          <label className="mb-2 font-semibold text-gray-700">Doctor Name</label>
+          <label className="mb-2 font-semibold text-gray-700">Doctor Name<span className="text-red-600">*</span></label>
           <select
             name="doctorName"
             value={formData.doctorName}
@@ -220,7 +277,7 @@ const AddAppointment = () => {
 
         {/* Date */}
         <div className="flex flex-col">
-          <label className="mb-2 font-semibold text-gray-700">Date</label>
+          <label className="mb-2 font-semibold text-gray-700">Date<span className="text-red-600">*</span></label>
           <input
             type="date"
             name="date"
@@ -234,7 +291,7 @@ const AddAppointment = () => {
 
         {/* Time */}
         <div className="flex flex-col">
-          <label className="mb-2 font-semibold text-gray-700">Time</label>
+          <label className="mb-2 font-semibold text-gray-700">Time<span className="text-red-600">*</span></label>
           <input
             type="time"
             name="time"
@@ -260,6 +317,7 @@ const AddAppointment = () => {
             type="submit"
             className="rounded-lg bg-teal-600 px-8 py-3 text-white font-semibold
                        hover:bg-teal-700 transition shadow-lg"
+            disabled={contactError.length > 0}
           >
             Save Appointment
           </button>

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { PencilSquareIcon, TrashIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -31,12 +33,13 @@ const Services = () => {
     try {
       await axios.delete(`/api/services/${id}`);
       setServices(services.filter((s) => s._id !== id));
-      // Adjust page if deleting last item on current page
       if ((services.length - 1) <= (currentPage - 1) * ITEMS_PER_PAGE && currentPage > 1) {
         setCurrentPage(currentPage - 1);
       }
+      toast.success('Service deleted successfully!');
     } catch (error) {
       console.error("Delete failed:", error);
+      toast.error('Failed to delete service.');
     }
   };
 
@@ -45,13 +48,49 @@ const Services = () => {
     setShowEditForm(true);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditingService((prev) => ({ ...prev, [name]: value }));
+ const handleInputChange = (e) => {
+  const { name, value } = e.target;
+
+  if (name === 'category') {
+    // Allow only letters and spaces
+    if (!/^[a-zA-Z ]*$/.test(value)) {
+      return; // block invalid input
+    }
+  }
+
+  setEditingService((prev) => ({ ...prev, [name]: value }));
+};
+
+  const validateForm = () => {
+    const { name, category, price, sessions } = editingService;
+
+    if (!/^[a-zA-Z0-9.\- ]+$/.test(name)) {
+      toast.error('Service name can only contain letters, numbers, dot (.), and hyphen (-)');
+      return false;
+    }
+
+    if (!/^[a-zA-Z ]+$/.test(category)) {
+      toast.error('Category should contain only alphabets');
+      return false;
+    }
+
+    if (!/^[1-9][0-9]*$/.test(price)) {
+      toast.error('Price must be a positive number');
+      return false;
+    }
+
+    if (!/^[2-9][0-9]*$/.test(sessions)) {
+      toast.error('Sessions must be greater than 1');
+      return false;
+    }
+
+    return true;
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     try {
       const response = await axios.put(`/api/services/${editingService._id}`, editingService);
       const updated = services.map((s) =>
@@ -60,12 +99,13 @@ const Services = () => {
       setServices(updated);
       setShowEditForm(false);
       setEditingService(null);
+      toast.success('Service updated successfully!');
     } catch (error) {
       console.error("Update failed:", error);
+      toast.error('Failed to update service.');
     }
   };
 
-  // Pagination logic
   const totalPages = Math.ceil(services.length / ITEMS_PER_PAGE);
   const paginatedServices = services.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -74,11 +114,12 @@ const Services = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 p-6 md:p-12 flex flex-col items-center">
+      <ToastContainer />
       <h1 className="text-4xl font-extrabold mb-10 text-blue-900 tracking-wide drop-shadow-md">
         Services List
       </h1>
 
-      <div className="mb-8 w-full max-w-6xl flex justify-end">
+      <div className="mb-8 w-full max-w-6xl flex justify-center">
         <button
           onClick={() => navigate('/add-service')}
           className="px-6 py-3 bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:bg-blue-800 active:scale-95 transition-transform"
@@ -148,7 +189,6 @@ const Services = () => {
         </table>
       </div>
 
-      {/* Pagination Controls */}
       {services.length > ITEMS_PER_PAGE && (
         <nav className="mt-8 flex justify-center items-center space-x-3">
           <button
@@ -188,7 +228,6 @@ const Services = () => {
         </nav>
       )}
 
-      {/* Edit Modal */}
       {showEditForm && editingService && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <form

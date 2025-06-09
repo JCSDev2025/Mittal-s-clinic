@@ -62,18 +62,20 @@ const Dashboard = () => {
     let labels = [], data = [];
 
     switch (range) {
-      case 'Today': {
-        labels = Array.from({ length: 24 }, (_, i) => `${i}h`);
-        const hourlyTotals = Array(24).fill(0);
-        bills.forEach(bill => {
-          const billDate = dayjs(bill.date);
-          if (billDate.isSame(today, 'day')) {
-            hourlyTotals[billDate.hour()] += bill.amountPaid || 0;
-          }
-        });
-        data = hourlyTotals;
-        break;
-      }
+    case 'Today': {
+  labels = Array.from({ length: 24 }, (_, i) => dayjs().hour(i).format('h A'));
+  const hourlyTotals = Array(24).fill(0);
+  bills.forEach(bill => {
+    const billTime = dayjs(bill.createdAt);
+    if (billTime.isSame(today, 'day')) {
+      hourlyTotals[billTime.hour()] += bill.amountPaid || 0;
+    }
+  });
+  data = hourlyTotals;
+  break;
+}
+
+
       case 'This Week': {
         labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         const startOfWeek = today.startOf('isoWeek');

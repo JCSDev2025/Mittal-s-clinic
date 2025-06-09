@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { PencilSquareIcon, TrashIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Clients = () => {
   const navigate = useNavigate();
@@ -27,8 +29,10 @@ const Clients = () => {
     try {
       await axios.delete(`/api/clients/${id}`);
       setClients(clients.filter((client) => client._id !== id));
+      toast.success('Client deleted successfully');
     } catch (error) {
       console.error("Delete failed:", error);
+      toast.error('Failed to delete client');
     }
   };
 
@@ -39,11 +43,33 @@ const Clients = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'name' && !/^[a-zA-Z\s.]*$/.test(value)) return;
+    if (name === 'age' && value !== '' && (!/^\d+$/.test(value) || Number(value) <= 0)) return;
+    if (name === 'mobile' && !/^\d{0,10}$/.test(value)) return;
+
     setEditingClient((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+
+    const { name, age, mobile, address, dob, gender } = editingClient;
+
+    if (!name || !age || !mobile || !address || !dob || !gender) {
+      toast.error('Please fill all fields');
+      return;
+    }
+
+    if (!/^[a-zA-Z\s.]+$/.test(name)) {
+      toast.error('Name must contain only alphabets, spaces, and periods');
+      return;
+    }
+
+    if (!/^\d{10}$/.test(mobile)) {
+      toast.error('Mobile must be 10 digits only');
+      return;
+    }
+
     try {
       const response = await axios.put(`/api/clients/${editingClient._id}`, editingClient);
       const updatedClients = clients.map((c) =>
@@ -52,26 +78,26 @@ const Clients = () => {
       setClients(updatedClients);
       setShowEditForm(false);
       setEditingClient(null);
+      toast.success('Client updated successfully');
     } catch (error) {
       console.error("Update failed:", error);
+      toast.error('Failed to update client');
     }
   };
 
   const formatDate = (dateString) => new Date(dateString).toLocaleDateString('en-IN');
-  const formatMobile = (mobile) => mobile.replace(/(\d{3})(\d{3})(\d{4})/, "$1 $2 $3");
+  const formatMobile = (mobile) => `+91 ${mobile.replace(/(\d{5})(\d{5})/, "$1 $2")}`;
 
-  // Pagination logic
   const indexOfLastClient = currentPage * clientsPerPage;
   const indexOfFirstClient = indexOfLastClient - clientsPerPage;
   const paginatedClients = clients.slice(indexOfFirstClient, indexOfLastClient);
   const totalPages = Math.ceil(clients.length / clientsPerPage);
 
-  const goToPage = (page) => {
-    setCurrentPage(page);
-  };
+  const goToPage = (page) => setCurrentPage(page);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 p-4 md:p-8 flex flex-col items-center">
+      <ToastContainer />
       <h1 className="text-3xl md:text-4xl font-extrabold mb-6 text-emerald-900">Clients List</h1>
 
       <div className="mb-6 flex flex-col md:flex-row gap-4 w-full max-w-5xl justify-center">
@@ -144,7 +170,6 @@ const Clients = () => {
         </table>
       </div>
 
-      {/* Pagination Controls */}
       {totalPages > 1 && (
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {Array.from({ length: totalPages }, (_, idx) => (
@@ -163,16 +188,15 @@ const Clients = () => {
         </div>
       )}
 
-      {/* Edit Modal */}
       {showEditForm && editingClient && (
         <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center p-4">
           <form onSubmit={handleUpdate} className="bg-white p-6 md:p-8 rounded-lg shadow-xl w-full max-w-xl space-y-5">
             <h2 className="text-xl md:text-2xl font-semibold text-emerald-700">Edit Client</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="text" name="name" value={editingClient.name} onChange={handleInputChange} required placeholder="Name" className="px-4 py-2 border rounded-md" />
+              <input type="text" name="name" value={editingClient.name} onChange={handleInputChange} required placeholder="Full Name" className="px-4 py-2 border rounded-md" />
               <input type="number" name="age" value={editingClient.age} onChange={handleInputChange} required placeholder="Age" className="px-4 py-2 border rounded-md" />
-              <input type="text" name="mobile" value={editingClient.mobile} onChange={handleInputChange} required placeholder="Mobile" className="px-4 py-2 border rounded-md" />
-              <input type="text" name="address" value={editingClient.address} onChange={handleInputChange} placeholder="Address" className="px-4 py-2 border rounded-md" />
+              <input type="text" name="mobile" value={editingClient.mobile} onChange={handleInputChange} required placeholder="10-digit Mobile Number" className="px-4 py-2 border rounded-md" />
+              <input type="text" name="address" value={editingClient.address} onChange={handleInputChange} required placeholder="Address" className="px-4 py-2 border rounded-md" />
               <input type="date" name="dob" value={editingClient.dob} onChange={handleInputChange} required className="px-4 py-2 border rounded-md col-span-1 md:col-span-2" />
               <select name="gender" value={editingClient.gender} onChange={handleInputChange} className="px-4 py-2 border rounded-md col-span-1 md:col-span-2" required>
                 <option value="">Select Gender</option>

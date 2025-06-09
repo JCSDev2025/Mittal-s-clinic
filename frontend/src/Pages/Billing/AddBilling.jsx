@@ -14,6 +14,8 @@ const AddBilling = () => {
     date: '',
     paymentMethod: '',
     notes: '',
+    totalAmount: '', // Add totalAmount to formData state
+    pendingAmount: '', // Add pendingAmount to formData state
   });
 
   const [clientOptions, setClientOptions] = useState([]);
@@ -59,25 +61,111 @@ const AddBilling = () => {
             date: bill.date.split('T')[0],
             paymentMethod: bill.paymentMethod,
             notes: bill.notes,
+            totalAmount: bill.totalAmount, // Load totalAmount from fetched data
+            pendingAmount: bill.pendingAmount, // Load pendingAmount from fetched data
           });
         })
         .catch((err) => console.error('Error loading bill:', err));
     }
   }, [id]);
 
+  useEffect(() => {
+    const cost = parseFloat(formData.cost);
+    let calculatedTotalAmount = '';
+    if (!isNaN(cost)) {
+      const gstAmount = cost * 0.18;
+      calculatedTotalAmount = (cost + gstAmount).toFixed(2);
+    }
+    // Update formData with the calculated totalAmount
+    setFormData((prev) => ({
+      ...prev,
+      totalAmount: calculatedTotalAmount,
+    }));
+  }, [formData.cost]);
+
+  useEffect(() => {
+    const total = parseFloat(formData.totalAmount);
+    const paid = parseFloat(formData.amountPaid);
+    let calculatedPendingAmount = '';
+
+    if (!isNaN(total) && !isNaN(paid)) {
+      calculatedPendingAmount = (total - paid).toFixed(2);
+    } else if (!isNaN(total) && isNaN(paid)) {
+        calculatedPendingAmount = total.toFixed(2); // If amount paid is not a number, pending is total amount
+    } else {
+        calculatedPendingAmount = '';
+    }
+
+    // Update formData with the calculated pendingAmount
+    setFormData((prev) => ({
+      ...prev,
+      pendingAmount: calculatedPendingAmount,
+    }));
+  }, [formData.totalAmount, formData.amountPaid]);
+
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Validation for strictly positive numbers for specific fields
+    if (['totalSessions', 'sessionsCompleted', 'cost', 'amountPaid'].includes(name)) {
+      // Allows empty string, or numbers (integers/decimals) that are non-negative
+      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+        setFormData((prev) => ({ ...prev, [name]: value }));
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!formData.clientName || !formData.services || !formData.date || !formData.assignedDoctor || !formData.totalSessions || !formData.sessionsCompleted) {
+    const {
+      clientName,
+      services,
+      date,
+      assignedDoctor,
+      totalSessions,
+      sessionsCompleted,
+      cost,
+      amountPaid,
+      totalAmount, // Include totalAmount in destructuring
+      pendingAmount, // Include pendingAmount in destructuring
+    } = formData;
+
+    if (!clientName || !services || !date || !assignedDoctor || !totalSessions || !sessionsCompleted) {
       setError('Please fill all required fields.');
       return;
     }
+
+    // Numerical validations
+    const numTotalSessions = Number(totalSessions);
+    const numSessionsCompleted = Number(sessionsCompleted);
+    const numCost = Number(cost);
+    const numAmountPaid = Number(amountPaid);
+    const numTotalAmount = Number(totalAmount);
+    const numPendingAmount = Number(pendingAmount);
+
+
+    if (
+      numTotalSessions <= 0 ||
+      numSessionsCompleted < 0 ||
+      numSessionsCompleted > numTotalSessions ||
+      (cost !== '' && numCost < 0) || // Check cost if it's not empty
+      (amountPaid !== '' && numAmountPaid < 0) // Check amountPaid if it's not empty
+    ) {
+      setError('Please enter valid positive numerical values for sessions, cost, and amount paid.');
+      return;
+    }
+
+    // Additional validation for totalAmount and pendingAmount (as they are calculated, primarily for display sanity)
+    if (isNaN(numTotalAmount) || numTotalAmount < 0 || isNaN(numPendingAmount) || numPendingAmount < 0) {
+        setError('Calculated amounts (Total Amount, Pending Amount) must be valid positive numbers.');
+        return;
+    }
+
 
     try {
       if (id) {
@@ -109,7 +197,7 @@ const AddBilling = () => {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/** Select Inputs */}
+          {/* Client Name */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Client Name <span className="text-red-500">*</span></label>
             <select
@@ -126,6 +214,7 @@ const AddBilling = () => {
             </select>
           </div>
 
+          {/* Assigned Doctor */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Assigned Doctor <span className="text-red-500">*</span></label>
             <select
@@ -142,6 +231,7 @@ const AddBilling = () => {
             </select>
           </div>
 
+          {/* Services */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Service <span className="text-red-500">*</span></label>
             <select
@@ -158,6 +248,7 @@ const AddBilling = () => {
             </select>
           </div>
 
+          {/* Total Sessions */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Total Sessions <span className="text-red-500">*</span></label>
             <input
@@ -172,6 +263,7 @@ const AddBilling = () => {
             />
           </div>
 
+          {/* Sessions Completed */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Sessions Completed <span className="text-red-500">*</span></label>
             <input
@@ -187,6 +279,7 @@ const AddBilling = () => {
             />
           </div>
 
+          {/* Cost */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Cost (₹)</label>
             <input
@@ -196,10 +289,24 @@ const AddBilling = () => {
               onChange={handleChange}
               min="0"
               className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
-              placeholder="Total cost"
+              placeholder="Total cost before GST"
             />
           </div>
 
+          {/* Total Amount with GST (Read-only) */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Total Amount (incl. 18% GST)</label>
+            <input
+              type="text"
+              name="totalAmount" // Use name attribute to bind to formData
+              value={formData.totalAmount} // Display value from formData
+              readOnly
+              className="w-full px-5 py-3 bg-gray-100 border border-green-300 rounded-lg focus:outline-none shadow-sm text-gray-700"
+              placeholder="Calculated total amount"
+            />
+          </div>
+
+          {/* Amount Paid */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Amount Paid (₹)</label>
             <input
@@ -208,12 +315,27 @@ const AddBilling = () => {
               value={formData.amountPaid}
               onChange={handleChange}
               min="0"
-              max={formData.cost || undefined}
+              // Optional: Max can be totalAmount if you want to prevent overpayment in the UI
+              max={formData.totalAmount ? parseFloat(formData.totalAmount) : undefined}
               className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
-              placeholder="Amount paid"
+              placeholder="Amount paid by client"
             />
           </div>
 
+          {/* Pending Amount (Read-only) */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Pending Amount (₹)</label>
+            <input
+              type="text"
+              name="pendingAmount" // Use name attribute to bind to formData
+              value={formData.pendingAmount} // Display value from formData
+              readOnly
+              className="w-full px-5 py-3 bg-gray-100 border border-green-300 rounded-lg focus:outline-none shadow-sm text-gray-700"
+              placeholder="Calculated pending amount"
+            />
+          </div>
+
+          {/* Date */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Date <span className="text-red-500">*</span></label>
             <input
@@ -222,17 +344,18 @@ const AddBilling = () => {
               value={formData.date}
               onChange={handleChange}
               required
-              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-300 transition-shadow shadow-sm"
             />
           </div>
 
+          {/* Payment Method */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Method</label>
             <select
               name="paymentMethod"
               value={formData.paymentMethod}
               onChange={handleChange}
-              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-300 transition-shadow shadow-sm"
             >
               <option value="">Select</option>
               <option value="Cash">Cash</option>
@@ -242,6 +365,7 @@ const AddBilling = () => {
             </select>
           </div>
 
+          {/* Remarks */}
           <div className="md:col-span-2">
             <label className="block text-sm font-semibold text-gray-700 mb-2">Remarks</label>
             <textarea
@@ -249,7 +373,7 @@ const AddBilling = () => {
               rows="4"
               value={formData.notes}
               onChange={handleChange}
-              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm resize-none"
+              className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-300 transition-shadow shadow-sm resize-none"
               placeholder="Additional remarks or notes"
             ></textarea>
           </div>
