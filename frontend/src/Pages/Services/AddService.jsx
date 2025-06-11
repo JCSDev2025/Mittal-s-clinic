@@ -14,10 +14,7 @@ const AddService = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // Directly defining the API base URL to resolve compilation issues in this Canvas environment.
-  // In a real Vite project, you would typically use `import.meta.env.VITE_API_BASE_URL`
-  // and configure it via a .env file.
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -95,7 +92,7 @@ const AddService = () => {
     }
 
     try {
-      await axios.post(`${API_BASE_URL}/api/services`, {
+      await axios.post('/api/services', {
         name: name.trim(),
         description: description.trim(),
         price: Number(price),

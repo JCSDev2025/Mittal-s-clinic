@@ -4,8 +4,6 @@ import { ToastContainer, toast } from 'react-toastify';
 // Removed: import 'react-toastify/dist/ReactToastify.css'; // Removed to prevent compilation errors
 import { UserGroupIcon } from '@heroicons/react/24/outline'; // Import Heroicon for empty state
 
-// Base URL for your backend API
-const API_BASE_URL = '/api'; // IMPORTANT: Adjust if your backend is on a different port or domain
 
 const StaffTargets = () => {
   const [staffList, setStaffList] = useState([]);
@@ -27,7 +25,7 @@ const StaffTargets = () => {
   useEffect(() => {
     const fetchStaff = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/staff`); // API connection for staff list
+        const res = await axios.get('/api/staff'); // API connection for staff list
         setStaffList(res.data);
       } catch (error) {
         console.error('Error fetching staff:', error);
@@ -41,7 +39,7 @@ const StaffTargets = () => {
   useEffect(() => {
     const fetchTargets = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/targets/staff`);
+        const res = await axios.get('/api/targets/staff');
         setAssignedTargets(res.data);
       } catch (error) {
         console.error('Error fetching staff targets:', error);
@@ -76,13 +74,13 @@ const StaffTargets = () => {
     try {
       let res;
       if (editingTargetId) {
-        res = await axios.put(`${API_BASE_URL}/targets/staff/${editingTargetId}`, targetData);
+        res = await axios.put('/api/targets/staff/${editingTargetId}', targetData);
         setAssignedTargets((prev) =>
           prev.map((target) => (target._id === editingTargetId ? res.data : target))
         );
         toast.success('Staff target updated successfully!', { position: 'top-right' });
       } else {
-        res = await axios.post(`${API_BASE_URL}/targets/staff`, targetData);
+        res = await axios.post('api/targets/staff', targetData);
         setAssignedTargets((prev) => [res.data, ...prev]);
         toast.success('Staff target assigned successfully!', { position: 'top-right' });
       }
@@ -116,7 +114,7 @@ const StaffTargets = () => {
     if (!targetToDeleteId) return; // Should not happen if modal is correctly triggered
 
     try {
-      await axios.delete(`${API_BASE_URL}/targets/staff/${targetToDeleteId}`);
+      await axios.delete('/api/targets/staff/${targetToDeleteId}');
       setAssignedTargets((prev) => prev.filter((item) => item._id !== targetToDeleteId));
       toast.success('Staff target deleted successfully!', { position: 'top-right' });
       // If the deleted item was the one being edited, clear the editing state

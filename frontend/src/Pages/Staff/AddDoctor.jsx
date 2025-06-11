@@ -21,7 +21,6 @@ const AddDoctor = ({ doctors, setDoctors }) => {
 
   // Directly defining the API base URL to resolve compilation issues in this Canvas environment.
   // In a real Vite project, you would use:
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   
 
 
@@ -114,7 +113,7 @@ const AddDoctor = ({ doctors, setDoctors }) => {
 
     try {
       // Use the hardcoded API URL
-      const response = await axios.post(`${API_BASE_URL}/api/doctors`, dataToSend);
+      const response = await axios.post('/api/doctors', dataToSend);
       setDoctors([...doctors, response.data]);
       navigate('/doctors');
     } catch (err) {

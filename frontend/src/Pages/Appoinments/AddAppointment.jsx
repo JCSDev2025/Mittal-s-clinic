@@ -27,13 +27,11 @@ const AddAppointment = () => {
 
   // Directly defining the API base URL to resolve compilation issues in this Canvas environment.
   // In a real Vite project, you would typically use:
- const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
-  //const API_BASE_URL = 'http://localhost:3000';
 
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/clients`);
+        const response = await axios.get('/api/clients');
         setClients(response.data);
       } catch (error) {
         console.error('Failed to fetch clients:', error);
@@ -46,7 +44,7 @@ const AddAppointment = () => {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/services`);
+        const response = await axios.get('/api/services');
         setServices(response.data);
       } catch (error) {
         console.error('Failed to fetch services:', error);
@@ -59,7 +57,7 @@ const AddAppointment = () => {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/doctors`);
+        const response = await axios.get('/api/doctors');
         setDoctors(response.data);
       } catch (error) {
         console.error('Failed to fetch doctors:', error);
@@ -152,7 +150,7 @@ const AddAppointment = () => {
     }
 
     try {
-      await axios.post(`${API_BASE_URL}/api/appointments`, formData);
+      await axios.post('/api/appointments', formData);
       toast.success('Appointment added successfully!');
       navigate('/appointments');
     } catch (error) {

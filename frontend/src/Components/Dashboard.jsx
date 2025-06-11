@@ -33,14 +33,14 @@ const Dashboard = () => {
 
   // Directly defining the API base URL to resolve compilation issues in this Canvas environment.
   // In a real Vite project, you would typically use:
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [billsRes, doctorsRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/bills`),
-          axios.get(`${API_BASE_URL}/api/doctors`)
+          axios.get('/api/bills'),
+          axios.get('/api/doctors')
         ]);
 
         const billsData = billsRes.data;
