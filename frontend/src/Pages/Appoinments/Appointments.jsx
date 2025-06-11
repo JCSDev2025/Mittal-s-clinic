@@ -1,16 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+// Removed: import 'react-toastify/dist/ReactToastify.css'; // Removed to prevent compilation errors
 
 const ITEMS_PER_PAGE = 10;
 
 const Appointments = () => {
+  // Using window.location.href for navigation as react-router-dom is not in the provided context
+  // If react-router-dom is available in your full project, you can use `useNavigate`
+  // const navigate = useNavigate();
+
   const [appointments, setAppointments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [errors, setErrors] = useState({});
+
+  // New state for search term
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // States for custom delete confirmation modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [appointmentToDeleteId, setAppointmentToDeleteId] = useState(null);
+
 
   useEffect(() => {
     fetchAppointments();
@@ -26,18 +38,33 @@ const Appointments = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm('Are you sure you want to delete this appointment?');
-    if (confirmDelete) {
-      try {
-        await axios.delete(`/api/appointments/${id}`);
-        toast.success('Appointment deleted successfully');
-        fetchAppointments();
-      } catch (error) {
-        console.error('Error deleting appointment:', error);
-        toast.error('Failed to delete appointment');
-      }
+  // Function to initiate delete via custom modal
+  const handleDelete = (id) => {
+    setAppointmentToDeleteId(id);
+    setShowConfirmModal(true);
+  };
+
+  // Function to confirm and execute delete
+  const confirmDeleteAction = async () => {
+    if (!appointmentToDeleteId) return; // Should not happen if modal is correctly triggered
+
+    try {
+      await axios.delete(`/api/appointments/${appointmentToDeleteId}`);
+      toast.success('Appointment deleted successfully');
+      fetchAppointments(); // Re-fetch appointments after deletion
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      toast.error('Failed to delete appointment');
+    } finally {
+      setShowConfirmModal(false);
+      setAppointmentToDeleteId(null);
     }
+  };
+
+  // Function to cancel delete action
+  const cancelDeleteAction = () => {
+    setShowConfirmModal(false);
+    setAppointmentToDeleteId(null);
   };
 
   const handleEdit = (appointment) => {
@@ -57,7 +84,7 @@ const Appointments = () => {
     const serviceRegex = /^[a-zA-Z0-9.,\-\s]+$/;
 
     // Contact: exactly 10 digits (allow +91 prefix but validate only digits after it)
-    const contactDigits = data.contact.replace(/^\+91/, '');
+    const contactDigits = data.contact ? data.contact.replace(/^\+91/, '') : '';
 
     if (!data.clientName || !nameRegex.test(data.clientName.trim())) {
       newErrors.clientName = "Client Name must contain only letters, spaces, dots, commas.";
@@ -121,10 +148,16 @@ const Appointments = () => {
     }
   };
 
+  // Filter appointments based on search term
+  const filteredAppointments = appointments.filter(appt =>
+    appt.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    appt.doctorName.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // Pagination calculation
-  const totalPages = Math.ceil(appointments.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filteredAppointments.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentAppointments = appointments.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const currentAppointments = filteredAppointments.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-white via-teal-50 to-teal-100 p-6 sm:p-10 flex flex-col items-center">
@@ -133,12 +166,47 @@ const Appointments = () => {
         Appointments List
       </h1>
 
-      <button
-        onClick={() => (window.location.href = '/add-appointment')}
-        className="mb-8 px-8 py-3 bg-teal-700 text-white font-semibold rounded-lg shadow-lg hover:bg-teal-800 transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-teal-400"
-      >
-        Add New Appointment
-      </button>
+      <div className="mb-8 w-full max-w-7xl flex flex-col sm:flex-row justify-between items-center gap-4">
+        <button
+          onClick={() => (window.location.href = '/add-appointment')}
+          className="px-8 py-3 bg-teal-700 text-white font-semibold rounded-lg shadow-lg hover:bg-teal-800 transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-teal-400"
+        >
+          Add New Appointment
+        </button>
+
+        {/* Search Bar */}
+        <div className="relative flex items-center group w-full sm:w-1/4">
+          <input
+            type="text"
+            placeholder="Search by client or doctor name..."
+            className="w-full pl-10 pr-10 py-2 border border-teal-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-teal-800 transition-all duration-200"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1); // Reset page to 1 on new search
+            }}
+          />
+          {/* Search Icon */}
+          <svg className="absolute left-3 w-5 h-5 text-teal-500 group-focus-within:text-teal-700 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          {/* Clear Button */}
+          {searchTerm && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setCurrentPage(1);
+              }}
+              className="absolute right-3 p-1 rounded-full text-teal-500 hover:bg-teal-100 focus:outline-none focus:ring-2 focus:ring-teal-400"
+              aria-label="Clear search"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path>
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
 
       <div className="w-full max-w-7xl overflow-x-auto rounded-lg shadow-xl bg-white border border-gray-200">
         <table className="w-full min-w-[900px] text-left text-gray-700">
@@ -193,7 +261,7 @@ const Appointments = () => {
             ) : (
               <tr>
                 <td colSpan="10" className="text-center py-8 text-gray-500 italic select-none">
-                  No appointments found.
+                  No appointments found or matches your search.
                 </td>
               </tr>
             )}
@@ -245,7 +313,7 @@ const Appointments = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <form
             onSubmit={handleUpdate}
-            className="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full space-y-6"
+            className="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full space-y-6 overflow-y-auto max-h-[90vh]"
           >
             <h2 className="text-2xl font-bold text-teal-700 mb-4 text-center">Edit Appointment</h2>
 
@@ -395,6 +463,30 @@ const Appointments = () => {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Custom Delete Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Confirm Deletion</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this appointment? This action cannot be undone.</p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={cancelDeleteAction}
+                className="bg-gray-300 px-5 py-2 rounded-md hover:bg-gray-400 text-gray-800 transition-colors duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteAction}
+                className="bg-red-600 text-white px-5 py-2 rounded-md hover:bg-red-700 transition-colors duration-200"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

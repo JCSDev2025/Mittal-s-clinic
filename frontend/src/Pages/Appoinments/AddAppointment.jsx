@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+// You might need to import react-toastify's CSS in your main App.jsx or main.js/main.jsx
+// import 'react-toastify/dist/ReactToastify.css';
 
 const AddAppointment = () => {
   const [formData, setFormData] = useState({
     clientName: '',
     age: '',
     gender: '',
-    contact: '+91',   // default +91
+    contact: '+91', // default +91
     service: '',
     doctorName: '',
     date: '',
@@ -22,13 +25,19 @@ const AddAppointment = () => {
 
   const [contactError, setContactError] = useState('');
 
+  // Directly defining the API base URL to resolve compilation issues in this Canvas environment.
+  // In a real Vite project, you would typically use:
+ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ;
+  //const API_BASE_URL = 'http://localhost:3000';
+
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/clients');
+        const response = await axios.get(`${API_BASE_URL}/api/clients`);
         setClients(response.data);
       } catch (error) {
         console.error('Failed to fetch clients:', error);
+        toast.error('Failed to load clients. Please check server connection.');
       }
     };
     fetchClients();
@@ -37,10 +46,11 @@ const AddAppointment = () => {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/services');
+        const response = await axios.get(`${API_BASE_URL}/api/services`);
         setServices(response.data);
       } catch (error) {
         console.error('Failed to fetch services:', error);
+        toast.error('Failed to load services. Please check server connection.');
       }
     };
     fetchServices();
@@ -49,10 +59,11 @@ const AddAppointment = () => {
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/doctors');
+        const response = await axios.get(`${API_BASE_URL}/api/doctors`);
         setDoctors(response.data);
       } catch (error) {
         console.error('Failed to fetch doctors:', error);
+        toast.error('Failed to load doctors. Please check server connection.');
       }
     };
     fetchDoctors();
@@ -80,12 +91,13 @@ const AddAppointment = () => {
           contact: selectedClient.mobile ? (selectedClient.mobile.startsWith('+91') ? selectedClient.mobile : '+91' + selectedClient.mobile) : '+91',
         }));
       } else {
+        // If client name is manually typed or not found, clear related fields
         setFormData(prev => ({
           ...prev,
-          clientName: '',
+          clientName: value, // Keep the typed value for clientName
           age: '',
           gender: '',
-          contact: '+91',
+          contact: '+91', // Reset contact
         }));
       }
     } else if (name === 'contact') {
@@ -117,8 +129,9 @@ const AddAppointment = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setContactError(''); // Clear contact error on submit
 
-    // Validate all required fields manually if needed (they have required attribute, but just extra check)
+    // Validate all required fields manually
     if (
       !formData.clientName ||
       !formData.age ||
@@ -129,27 +142,28 @@ const AddAppointment = () => {
       !formData.date ||
       !formData.time
     ) {
-      alert('Please fill in all required fields.');
+      toast.error('Please fill in all required fields.');
       return;
     }
 
     if (!validateContact(formData.contact)) {
-      alert('Please enter a valid contact number starting with +91 and followed by 10 digits.');
+      toast.error('Please enter a valid contact number starting with +91 and followed by 10 digits.');
       return;
     }
 
     try {
-      await axios.post('http://localhost:3000/api/appointments', formData);
-      alert('Appointment added successfully');
+      await axios.post(`${API_BASE_URL}/api/appointments`, formData);
+      toast.success('Appointment added successfully!');
       navigate('/appointments');
     } catch (error) {
       console.error('Error adding appointment:', error);
-      alert('Failed to add appointment');
+      toast.error(error.response?.data?.error || 'Failed to add appointment. Please try again.');
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-cyan-50 via-teal-50 to-cyan-50 px-6 py-12">
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
       <form
         onSubmit={handleSubmit}
         className="bg-white shadow-xl rounded-3xl max-w-3xl w-full p-10 sm:p-12 md:p-16
@@ -224,8 +238,9 @@ const AddAppointment = () => {
             onChange={handleChange}
             required
             maxLength={13} // +91 + 10 digits = 13 chars
-            className="rounded-lg border border-gray-300 px-4 py-3 text-gray-900
-                       focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+            className={`rounded-lg border px-4 py-3 text-gray-900
+                       focus:outline-none focus:ring-2 focus:ring-teal-400 transition
+                       ${contactError ? 'border-red-500' : 'border-gray-300'}`}
             placeholder="+91XXXXXXXXXX"
             pattern="\+91[0-9]{10}"
             title="Contact number must start with +91 and contain 10 digits after it."

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FaUserMd, FaFileInvoiceDollar } from 'react-icons/fa';
-import { MdPending } from 'react-icons/md';
+// Removed react-icons imports due to compilation issues in this environment
+// import { FaUserMd, FaFileInvoiceDollar } from 'react-icons/fa';
+// import { MdPending } from 'react-icons/md';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -17,6 +18,7 @@ import dayjs from 'dayjs';
 import isoWeek from 'dayjs/plugin/isoWeek';
 import isBetween from 'dayjs/plugin/isBetween';
 
+
 dayjs.extend(isoWeek);
 dayjs.extend(isBetween);
 
@@ -29,19 +31,23 @@ const Dashboard = () => {
   const [totalDoctors, setTotalDoctors] = useState(0);
   const [bills, setBills] = useState([]);
 
+  // Directly defining the API base URL to resolve compilation issues in this Canvas environment.
+  // In a real Vite project, you would typically use:
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [billsRes, doctorsRes] = await Promise.all([
-          axios.get('http://localhost:3000/api/bills'),
-          axios.get('http://localhost:3000/api/doctors')
+          axios.get(`${API_BASE_URL}/api/bills`),
+          axios.get(`${API_BASE_URL}/api/doctors`)
         ]);
 
         const billsData = billsRes.data;
         const doctorsData = doctorsRes.data;
 
         const totalRevenue = billsData.reduce((sum, bill) => sum + (bill.amountPaid || 0), 0);
-        const totalPending = billsData.reduce((sum, bill) => sum + ((bill.cost || 0) - (bill.amountPaid || 0)), 0);
+        const totalPending = billsData.reduce((sum, bill) => sum + ((bill.totalAmount || 0) - (bill.amountPaid || 0)), 0);
 
         setRevenue(totalRevenue);
         setPendingAmount(totalPending);
@@ -63,17 +69,17 @@ const Dashboard = () => {
 
     switch (range) {
     case 'Today': {
-  labels = Array.from({ length: 24 }, (_, i) => dayjs().hour(i).format('h A'));
-  const hourlyTotals = Array(24).fill(0);
-  bills.forEach(bill => {
-    const billTime = dayjs(bill.createdAt);
-    if (billTime.isSame(today, 'day')) {
-      hourlyTotals[billTime.hour()] += bill.amountPaid || 0;
+      labels = Array.from({ length: 24 }, (_, i) => dayjs().hour(i).format('h A'));
+      const hourlyTotals = Array(24).fill(0);
+      bills.forEach(bill => {
+        const billTime = dayjs(bill.createdAt);
+        if (billTime.isSame(today, 'day')) {
+          hourlyTotals[billTime.hour()] += bill.amountPaid || 0;
+        }
+      });
+      data = hourlyTotals;
+      break;
     }
-  });
-  data = hourlyTotals;
-  break;
-}
 
 
       case 'This Week': {
@@ -81,7 +87,7 @@ const Dashboard = () => {
         const startOfWeek = today.startOf('isoWeek');
         const dailyTotals = Array(7).fill(0);
         bills.forEach(bill => {
-          const billDate = dayjs(bill.date);
+          const billDate = dayjs(bill.createdAt); // Use createdAt for when the bill was recorded
           if (billDate.isBetween(startOfWeek.subtract(1, 'second'), startOfWeek.add(7, 'day'), null, '[)')) {
             dailyTotals[billDate.isoWeekday() - 1] += bill.amountPaid || 0;
           }
@@ -93,7 +99,7 @@ const Dashboard = () => {
         labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
         const weeklyTotals = Array(4).fill(0);
         bills.forEach(bill => {
-          const billDate = dayjs(bill.date);
+          const billDate = dayjs(bill.createdAt); // Use createdAt
           if (billDate.isSame(today, 'month')) {
             const weekNumber = Math.ceil(billDate.date() / 7);
             if (weekNumber <= 4) weeklyTotals[weekNumber - 1] += bill.amountPaid || 0;
@@ -107,7 +113,7 @@ const Dashboard = () => {
         labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
         const weeklyTotals = Array(4).fill(0);
         bills.forEach(bill => {
-          const billDate = dayjs(bill.date);
+          const billDate = dayjs(bill.createdAt); // Use createdAt
           if (billDate.isSame(lastMonth, 'month')) {
             const weekNumber = Math.ceil(billDate.date() / 7);
             if (weekNumber <= 4) weeklyTotals[weekNumber - 1] += bill.amountPaid || 0;
@@ -122,7 +128,7 @@ const Dashboard = () => {
         labels = Array.from({ length: 3 }, (_, i) => quarterStart.add(i, 'month').format('MMM'));
         const monthlyTotals = Array(3).fill(0);
         bills.forEach(bill => {
-          const billDate = dayjs(bill.date);
+          const billDate = dayjs(bill.createdAt); // Use createdAt
           if (billDate.isBetween(quarterStart.subtract(1, 'second'), quarterStart.add(3, 'month'), null, '[)')) {
             monthlyTotals[billDate.month() - quarterStart.month()] += bill.amountPaid || 0;
           }
@@ -131,10 +137,11 @@ const Dashboard = () => {
         break;
       }
       case 'Half Year': {
-        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']; // Assuming the first half of the year
         const monthlyTotals = Array(6).fill(0);
         bills.forEach(bill => {
-          const billDate = dayjs(bill.date);
+          const billDate = dayjs(bill.createdAt); // Use createdAt
+          // Check if within the current year and the first 6 months
           if (billDate.isSame(today, 'year') && billDate.month() < 6) {
             monthlyTotals[billDate.month()] += bill.amountPaid || 0;
           }
@@ -147,7 +154,7 @@ const Dashboard = () => {
         labels = Array.from({ length: monthCount }, (_, i) => dayjs().month(i).format('MMM'));
         const monthlyTotals = Array(monthCount).fill(0);
         bills.forEach(bill => {
-          const billDate = dayjs(bill.date);
+          const billDate = dayjs(bill.createdAt); // Use createdAt
           if (billDate.isSame(today, 'year')) {
             monthlyTotals[billDate.month()] += bill.amountPaid || 0;
           }
@@ -216,9 +223,12 @@ const Dashboard = () => {
       <h1 className="text-3xl font-bold text-slate-800 mb-6">Clinic Management Dashboard</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <DashboardCard icon={<FaFileInvoiceDollar />} label="Total Revenue" value={`₹${revenue.toLocaleString()}`} bg="bg-yellow-100" text="text-yellow-800" />
-        <DashboardCard icon={<FaUserMd />} label="Available Doctors" value={totalDoctors} bg="bg-green-100" text="text-green-800" />
-        <DashboardCard icon={<MdPending />} label="Pending Amount" value={`₹${pendingAmount.toLocaleString()}`} bg="bg-red-100" text="text-red-800" />
+        {/* Replaced FaFileInvoiceDollar with a div for icon */}
+        <DashboardCard icon={<div className="text-4xl">💰</div>} label="Total Revenue" value={`₹${revenue.toLocaleString()}`} bg="bg-yellow-100" text="text-yellow-800" />
+        {/* Replaced FaUserMd with a div for icon */}
+        <DashboardCard icon={<div className="text-4xl">👩‍⚕️</div>} label="Available Doctors" value={totalDoctors} bg="bg-green-100" text="text-green-800" />
+        {/* Replaced MdPending with a div for icon */}
+        <DashboardCard icon={<div className="text-4xl">⏳</div>} label="Pending Amount" value={`₹${pendingAmount.toLocaleString()}`} bg="bg-red-100" text="text-red-800" />
       </div>
 
       <div className="bg-white rounded-xl shadow-xl p-6">

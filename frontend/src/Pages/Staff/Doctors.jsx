@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+// Removed: import 'react-toastify/dist/ReactToastify.css'; // This line caused the compilation error
 
 const Doctors = () => {
   const [doctors, setDoctors] = useState([]);
@@ -9,6 +9,13 @@ const Doctors = () => {
   const [editingDoctor, setEditingDoctor] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const doctorsPerPage = 10;
+
+  // New state for search term
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // States for custom delete confirmation modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [doctorToDeleteId, setDoctorToDeleteId] = useState(null);
 
   // Validation errors object
   const [errors, setErrors] = useState({});
@@ -33,17 +40,30 @@ const Doctors = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    const confirmDelete = window.confirm('Are you sure you want to delete this doctor?');
-    if (!confirmDelete) return;
+  const handleDelete = (id) => {
+    setDoctorToDeleteId(id);
+    setShowConfirmModal(true);
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!doctorToDeleteId) return; // Should not happen if modal is correctly triggered
+
     try {
-      await axios.delete(`/api/doctors/${id}`);
-      setDoctors((prev) => prev.filter((doc) => doc._id !== id));
+      await axios.delete(`/api/doctors/${doctorToDeleteId}`);
+      setDoctors((prev) => prev.filter((doc) => doc._id !== doctorToDeleteId));
       toast.success('Doctor deleted successfully');
     } catch (error) {
       console.error('Failed to delete doctor:', error);
       toast.error('Failed to delete doctor');
+    } finally {
+      setShowConfirmModal(false);
+      setDoctorToDeleteId(null);
     }
+  };
+
+  const cancelDeleteAction = () => {
+    setShowConfirmModal(false);
+    setDoctorToDeleteId(null);
   };
 
   const handleEdit = (doctor) => {
@@ -151,13 +171,19 @@ const Doctors = () => {
     }
   };
 
+  // Filter doctors based on search term
+  const filteredDoctors = doctors.filter(doctor =>
+    doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doctor.qualification.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // Pagination logic
-  const totalPages = Math.ceil(doctors.length / doctorsPerPage);
+  const totalPages = Math.ceil(filteredDoctors.length / doctorsPerPage);
   const startIdx = (currentPage - 1) * doctorsPerPage;
-  const currentDoctors = doctors.slice(startIdx, startIdx + doctorsPerPage);
+  const currentDoctors = filteredDoctors.slice(startIdx, startIdx + doctorsPerPage);
 
   const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+    if (page >= 1 && page && page <= totalPages) setCurrentPage(page);
   };
 
   return (
@@ -175,6 +201,38 @@ const Doctors = () => {
           >
             Add New Doctor
           </button>
+          {/* Search Bar moved here */}
+          <div className="relative flex items-center group w-full sm:w-1/3">
+            <input
+              type="text"
+              placeholder="Search doctors by name"
+              className="w-full pl-10 pr-10 py-2 border border-indigo-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-indigo-800 transition-all duration-200"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1); // Reset page to 1 on new search
+              }}
+            />
+            {/* Search Icon */}
+            <svg className="absolute left-3 w-5 h-5 text-indigo-500 group-focus-within:text-indigo-700 transition-colors duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            {/* Clear Button */}
+            {searchTerm && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setCurrentPage(1);
+                }}
+                className="absolute right-3 p-1 rounded-full text-indigo-500 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                aria-label="Clear search"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                </svg>
+              </button>
+            )}
+          </div>
           <button
             onClick={() => window.location.assign('/targets')}
             className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-all"
@@ -182,6 +240,7 @@ const Doctors = () => {
             View Targets
           </button>
         </div>
+
 
         <div className="overflow-auto rounded-xl shadow-lg">
           <table className="w-full min-w-[1100px] bg-white text-sm text-left">
@@ -238,7 +297,7 @@ const Doctors = () => {
               ) : (
                 <tr>
                   <td colSpan="10" className="text-center py-6 text-gray-500">
-                    No doctors available.
+                    No doctors available or matches your search.
                   </td>
                 </tr>
               )}
@@ -458,6 +517,30 @@ const Doctors = () => {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* Custom Delete Confirmation Modal */}
+        {showConfirmModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center p-4">
+            <div className="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full text-center">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Confirm Deletion</h3>
+              <p className="text-gray-600 mb-6">Are you sure you want to delete this doctor? This action cannot be undone.</p>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={cancelDeleteAction}
+                  className="bg-gray-300 px-5 py-2 rounded-md hover:bg-gray-400 text-gray-800 transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteAction}
+                  className="bg-red-600 text-white px-5 py-2 rounded-md hover:bg-red-700 transition-colors duration-200"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

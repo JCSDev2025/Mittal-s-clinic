@@ -1,9 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { useReactToPrint } from 'react-to-print';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import Logo from '../assets/Logo.webp';
 
 const InvoicePage = () => {
@@ -11,20 +8,30 @@ const InvoicePage = () => {
   const [bill, setBill] = useState(null);
   const componentRef = useRef(null);
 
-  const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
-    documentTitle: `Invoice_${id}`,
-  });
+  const handlePrint = () => {
+    const originalContent = document.body.innerHTML;
+    const printArea = componentRef.current.innerHTML;
+    document.body.innerHTML = printArea;
+    window.print();
+    document.body.innerHTML = originalContent;
+    window.location.reload(); // reload to restore original view
+  };
 
   const handleDownloadPDF = async () => {
     if (!componentRef.current) return;
+
+    if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+      alert('PDF libraries are not loaded. Please check CDN script tags in index.html.');
+      return;
+    }
 
     const canvas = await html2canvas(componentRef.current, {
       scale: 2,
       useCORS: true,
     });
+
     const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
@@ -38,131 +45,142 @@ const InvoicePage = () => {
         const response = await axios.get(`/api/bills/${id}`);
         setBill(response.data);
       } catch (error) {
-        console.error('Failed to fetch bill details:', error);
+        console.error('Failed to fetch bill:', error);
       }
     };
     fetchBill();
   }, [id]);
 
   if (!bill) {
-    return (
-      <div className="text-center mt-10 text-xl text-gray-500">Loading invoice...</div>
-    );
+    return <div className="text-center mt-10 text-xl text-gray-500">Loading invoice...</div>;
   }
 
-  const invoiceNumber = `INV-${parseInt(id.slice(-4), 16) % 1000 + 1}`;
+  const invoiceNumber = `INV-${parseInt(id.slice(-6), 16) % 100000 + 1}`;
+  const formatCurrency = (amount) =>
+    amount == null || isNaN(amount) ? '₹0.00' : `₹${parseFloat(amount).toFixed(2)}`;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4 flex flex-col items-center space-y-4">
-      {/* Buttons (Hidden on Print) */}
-      <div className="space-x-4 no-print">
+    <div className="min-h-screen bg-gray-100 py-10 px-4 flex flex-col items-center">
+      {/* Buttons */}
+      <div className="space-x-4 mb-6 no-print">
         <button
           onClick={handlePrint}
-          className="px-6 py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700 shadow"
+          className="px-6 py-2 bg-blue-700 text-white font-semibold rounded-lg hover:bg-blue-800 shadow-md"
         >
           Print Invoice
         </button>
         <button
           onClick={handleDownloadPDF}
-          className="px-6 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 shadow"
+          className="px-6 py-2 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 shadow-md"
         >
           Download PDF
         </button>
       </div>
 
-      {/* Invoice Content - A4 layout */}
+      {/* Invoice Content */}
       <div
         ref={componentRef}
-        className="bg-white w-full max-w-[794px] p-8 rounded shadow-lg text-sm"
-        style={{
-          minHeight: '1122px', // A4 height in pixels at 96dpi
-          boxSizing: 'border-box',
-        }}
+        className="bg-white w-full max-w-[210mm] min-h-[297mm] p-8 sm:p-12 shadow-2xl relative"
+        style={{ boxSizing: 'border-box', fontFamily: 'Inter, sans-serif' }}
       >
         {/* Header */}
-        <div className="flex justify-between items-center border-b pb-4 mt-24">
+        <div className="flex justify-between items-start pb-8 border-b border-gray-200 mb-8">
           <div>
-            <h1 className="text-xl font-bold text-green-700">Mittal's Hair Skin & Laser</h1>
-            <p className="text-gray-600">Mittal's Wellness</p>
-            <p>Swathi Theatre Rd</p>
-            <p>Alankar Sweets and Bakers</p>
-            <p>Bhavanipuram, V D Puram</p>
-            <p>Vijayawada, Andhra Pradesh 520012</p>
-          </div>
-          <img src={Logo} alt="Clinic Logo" className="w-24 h-24 object-contain" />
-        </div>
-
-        {/* Invoice Info */}
-        <div className="flex justify-between mb-4  my-20">
-          <div>
-            <h2 className="font-bold text-gray-700">Bill To:</h2>
-            <p>{bill.clientName}</p>
+            <img src={Logo} alt="Clinic Logo" className="w-24 h-24 mb-4 object-contain" />
+            <h1 className="text-xl font-bold text-blue-800">Mittal's Hair Skin & Laser</h1>
+            <p className="text-sm text-gray-700">Mittal's Wellness</p>
+            <p className="text-xs text-gray-600">Swathi Theatre Rd, Alankar Sweets</p>
+            <p className="text-xs text-gray-600">Bhavanipuram, V D Puram</p>
+            <p className="text-xs text-gray-600">Vijayawada, Andhra Pradesh 520012</p>
           </div>
           <div className="text-right">
-            <p><strong>Invoice No:</strong> {invoiceNumber}</p>
-            <p><strong>Invoice Date:</strong> {bill.date?.split('T')[0]}</p>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4 uppercase">Invoice</h2>
+            <p className="text-sm text-gray-700">
+              <span className="font-semibold">Invoice No:</span> {invoiceNumber}
+            </p>
+            <p className="text-sm text-gray-700">
+              <span className="font-semibold">Issue Date:</span> {bill.date?.split('T')[0]}
+            </p>
+            <p className="text-sm text-gray-700">
+              <span className="font-semibold">Due Date:</span> {bill.date?.split('T')[0]}
+            </p>
           </div>
         </div>
 
-        {/* Service Table */}
-        <table className="w-full border border-gray-300 mb-4 text-xs my-16">
-          <thead className="bg-green-100 text-green-800">
-            <tr>
-              <th className="border px-2 py-1 text-left">Sl.</th>
-              <th className="border px-2 py-1 text-left">Service</th>
-              <th className="border px-2 py-1 text-left">Doctor</th>
-              <th className="border px-2 py-1 text-center">Total Sessions</th>
-              <th className="border px-2 py-1 text-center">Completed</th>
-              <th className="border px-2 py-1 text-right">Cost (₹)</th>
-              <th className="border px-2 py-1 text-left">Payment</th>
-              <th className="border px-2 py-1 text-left">Remarks</th>
+        {/* Client Details */}
+        <div className="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h3 className="text-lg font-semibold text-blue-700 mb-2">Bill To:</h3>
+          <p className="text-md font-medium text-gray-800">{bill.clientName}</p>
+        </div>
+
+        {/* Services Table */}
+        <table className="w-full text-sm text-left table-auto border-collapse mb-12">
+          <thead>
+            <tr className="bg-blue-100 text-blue-800 uppercase text-xs font-semibold">
+              <th className="py-3 px-4 border-b border-blue-200">Description</th>
+              <th className="py-3 px-4 border-b border-blue-200 text-center">Qty</th>
+              <th className="py-3 px-4 border-b border-blue-200 text-right">Unit Price</th>
+              <th className="py-3 px-4 border-b border-blue-200 text-right">Amount</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="hover:bg-green-50">
-              <td className="border px-2 py-1">1</td>
-              <td className="border px-2 py-1">{bill.services}</td>
-              <td className="border px-2 py-1">{bill.assignedDoctor}</td>
-              <td className="border px-2 py-1 text-center">{bill.totalSessions}</td>
-              <td className="border px-2 py-1 text-center">{bill.sessionsCompleted}</td>
-              <td className="border px-2 py-1 text-right">{parseFloat(bill.cost).toFixed(2)}</td>
-              <td className="border px-2 py-1">{bill.paymentMethod || '-'}</td>
-              <td className="border px-2 py-1">{bill.notes || '-'}</td>
+            <tr className="border-b border-gray-200 hover:bg-blue-50">
+              <td className="py-3 px-4 text-gray-800">{bill.services}</td>
+              <td className="py-3 px-4 text-center text-gray-700">1</td>
+              <td className="py-3 px-4 text-right text-gray-700">{formatCurrency(bill.cost)}</td>
+              <td className="py-3 px-4 text-right text-gray-800 font-medium">{formatCurrency(bill.cost)}</td>
             </tr>
           </tbody>
         </table>
 
         {/* Totals */}
-        <div className="flex justify-end mt-12">
-          <div className="w-full max-w-sm space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span>₹{parseFloat(bill.totalAmount).toFixed(2)}</span>
+        <div className="flex justify-end mb-12">
+          <div className="w-full sm:w-1/2 md:w-1/3 space-y-1">
+            <div className="flex justify-between items-center py-2 px-4 text-gray-700">
+              <span className="font-semibold">Subtotal:</span>
+              <span>{formatCurrency(bill.cost)}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Total (Incl. 18% GST)</span>
-              <span className="font-semibold text-gray-800">₹{parseFloat(bill.totalAmount).toFixed(2)}</span>
+            <div className="flex justify-between items-center py-2 px-4 text-gray-700 border-t border-gray-200">
+              <span className="font-semibold">GST (18%):</span>
+              <span>{formatCurrency(bill.totalAmount - bill.cost)}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Paid</span>
-              <span className="text-green-700">₹{parseFloat(bill.amountPaid).toFixed(2)}</span>
+            <div className="flex justify-between items-center py-3 px-4 bg-blue-50 text-gray-800 font-bold text-lg rounded-b-lg border-t border-blue-200">
+              <span>TOTAL:</span>
+              <span>{formatCurrency(bill.totalAmount)}</span>
             </div>
-            <div className="flex justify-between border-t pt-1 font-semibold">
-              <span>Balance Due</span>
-              <span className="text-red-600">₹{parseFloat(bill.pendingAmount).toFixed(2)}</span>
+            <div className="flex justify-between items-center py-2 px-4 text-gray-700 border-t border-gray-200">
+              <span className="font-semibold">Amount Paid:</span>
+              <span>{formatCurrency(bill.amountPaid)}</span>
             </div>
+            <div className="flex justify-between items-center py-2 px-4 text-gray-700 border-t border-gray-200">
+              <span className="font-semibold">Pending Amount:</span>
+              <span>{formatCurrency(bill.totalAmount - bill.amountPaid)}</span>
+            </div>
+            
           </div>
         </div>
 
-        {/* Payment Instructions */}
-        <div className="mt-12 text-sm">
-          <h3 className="font-bold text-gray-700">Payment Instructions:</h3>
-          <p>Pay via UPI, Cash, or Cheque to: <strong>Mittal's Clinic</strong></p>
-        </div>
-
-        {/* Thank You Note */}
-        <div className="mt-32 text-center text-green-700 font-semibold text-base italic">
-          Thank you for choosing Mittal's Clinic. Wishing you good health and happiness!
+        {/* Footer Notes */}
+        <div className="absolute bottom-16 left-12 right-12">
+          <div className="flex justify-between items-end">
+            <div className="text-xs text-gray-600">
+              <p className="font-semibold">Notes:</p>
+              <p className="mb-1">{bill.notes || 'N/A'}</p>
+              <p className="font-semibold">Payment Method:</p>
+              <p>{bill.paymentMethod || 'N/A'}</p>
+              <p className="font-semibold mt-2">Sessions Info:</p>
+              <p>Total: {bill.totalSessions || 0}</p>
+              <p>Completed: {bill.sessionsCompleted || 0}</p>
+              <p>Pending: {(bill.totalSessions - bill.sessionsCompleted) || 0}</p>
+              <p className="font-semibold mt-2">Billing Info:</p>
+              <p>Amount Paid: {formatCurrency(bill.amountPaid)}</p>
+              <p>Pending: {formatCurrency(bill.totalAmount - bill.amountPaid)}</p>
+            </div>
+            <div className="text-right text-xs text-gray-600">
+              <p className="font-semibold text-blue-700">Mittal's Hair Skin & Laser</p>
+              <p>Thank you for your business!</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

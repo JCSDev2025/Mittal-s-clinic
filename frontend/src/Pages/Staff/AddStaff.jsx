@@ -16,13 +16,30 @@ const AddStaff = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // Directly defining the API base URL to resolve compilation issues in this Canvas environment.
+  // In a real Vite project, you would typically use `import.meta.env.VITE_API_BASE_URL`
+  // and configure it via a .env file.
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Validations
+    // Validations (these are simple client-side filters, more robust validation in validateForm)
     if (name === 'name' && !/^[a-zA-Z.\s]*$/.test(value)) return;
     if (name === 'role' && !/^[a-zA-Z\s]*$/.test(value)) return;
-    if (name === 'phone' && !/^\+91\d{0,10}$/.test(value)) return;
+    
+    // Phone number validation: allow +91 and up to 10 digits
+    if (name === 'phone') {
+        let cleanValue = value.replace(/\D/g, ''); // Remove non-digits
+        if (!cleanValue.startsWith('91')) { // If it doesn't start with 91 after cleaning, prefix it.
+            cleanValue = '91' + cleanValue;
+        }
+        cleanValue = cleanValue.substring(0, 12); // Limit to 12 chars (91 + 10 digits)
+        setFormData((prev) => ({ ...prev, [name]: '+' + cleanValue }));
+        return; // Return early as we've already set the state
+    }
+
     if (name === 'experience' && !/^\d*$/.test(value)) return;
     if (name === 'qualification' && !/^[a-zA-Z.\s]*$/.test(value)) return;
     if (name === 'salary' && !/^\d*$/.test(value)) return;
@@ -32,43 +49,36 @@ const AddStaff = () => {
 
   const validateForm = () => {
     const { name, role, phone, experience, qualification, salary } = formData;
+    let isValid = true;
+    let newError = null; // Use a single error message for simplicity as per original code
 
     if (!/^[a-zA-Z.\s]+$/.test(name)) {
-      setError('Name should contain only alphabets, dot (.) and spaces');
-      return false;
+      newError = 'Name should contain only alphabets, dot (.) and spaces';
+      isValid = false;
+    } else if (!/^[a-zA-Z\s]+$/.test(role)) {
+      newError = 'Role should contain only alphabets and spaces';
+      isValid = false;
+    } else if (!/^\+91\d{10}$/.test(phone)) {
+      newError = 'Phone must be in format +91 followed by 10 digits';
+      isValid = false;
+    } else if (isNaN(Number(experience)) || Number(experience) <= 0) { // More robust check for positive number
+      newError = 'Experience must be a positive number';
+      isValid = false;
+    } else if (!/^[a-zA-Z.\s]+$/.test(qualification)) {
+      newError = 'Qualification should contain only alphabets, dot (.) and spaces';
+      isValid = false;
+    } else if (isNaN(Number(salary)) || Number(salary) <= 0) { // More robust check for positive number
+      newError = 'Salary must be a positive number';
+      isValid = false;
     }
 
-    if (!/^[a-zA-Z\s]+$/.test(role)) {
-      setError('Role should contain only alphabets and spaces');
-      return false;
-    }
-
-    if (!/^\+91\d{10}$/.test(phone)) {
-      setError('Phone must be in format +91 followed by 10 digits');
-      return false;
-    }
-
-    if (!/^[1-9]\d*$/.test(experience)) {
-      setError('Experience must be a positive number');
-      return false;
-    }
-
-    if (!/^[a-zA-Z.\s]+$/.test(qualification)) {
-      setError('Qualification should contain only alphabets, dot (.) and spaces');
-      return false;
-    }
-
-    if (!/^[1-9]\d*$/.test(salary)) {
-      setError('Salary must be a positive number');
-      return false;
-    }
-
-    return true;
+    setError(newError);
+    return isValid;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setError(null); // Clear previous errors
 
     if (!validateForm()) return;
 
@@ -81,7 +91,7 @@ const AddStaff = () => {
     };
 
     try {
-      await axios.post('http://localhost:3000/api/staff', dataToSend);
+      await axios.post(`${API_BASE_URL}/api/staff`, dataToSend);
       navigate('/staff');
     } catch (err) {
       setError(err.response?.data?.error || err.message || 'Something went wrong');

@@ -19,6 +19,12 @@ const AddDoctor = ({ doctors, setDoctors }) => {
   const [submitError, setSubmitError] = useState(null);
   const navigate = useNavigate();
 
+  // Directly defining the API base URL to resolve compilation issues in this Canvas environment.
+  // In a real Vite project, you would use:
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  
+
+
   const validateField = (name, value) => {
     switch (name) {
       case 'name':
@@ -71,8 +77,14 @@ const AddDoctor = ({ doctors, setDoctors }) => {
 
     // Phone number validation
     if (name === 'phone') {
-      if (!/^\+91\d{0,10}$/.test(newValue)) return;
+      // Allow '+91' prefix to be typed initially, then restrict to 10 digits
+      if (!newValue.startsWith('+91')) {
+          newValue = '+91' + newValue.replace(/^\+91/, '').replace(/\D/g, '').substring(0, 10);
+      } else {
+          newValue = '+91' + newValue.replace(/^\+91/, '').replace(/\D/g, '').substring(0, 10);
+      }
     }
+
 
     // Numeric only for experience and salary
     if ((name === 'experience' || name === 'salary') && !/^\d*$/.test(newValue)) return;
@@ -101,7 +113,8 @@ const AddDoctor = ({ doctors, setDoctors }) => {
     };
 
     try {
-      const response = await axios.post('http://localhost:3000/api/doctors', dataToSend);
+      // Use the hardcoded API URL
+      const response = await axios.post(`${API_BASE_URL}/api/doctors`, dataToSend);
       setDoctors([...doctors, response.data]);
       navigate('/doctors');
     } catch (err) {

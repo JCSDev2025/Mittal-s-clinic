@@ -20,6 +20,7 @@ import Login from './Components/Login';
 import Staff from './Pages/Staff/Staff';
 import AddStaff from './Pages/Staff/AddStaff';
 import InvoicePage from './Pages/InvoicePage';
+import StaffTargets from './Pages/Staff/StaffTargets';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -56,6 +57,7 @@ function App() {
           <Route path="edit-bill/:id" element={<AddBilling bills={[]} setBills={() => {}} />} />
           <Route path="reports" element={<Reports />} />
           <Route path="/invoice/:id" element={<InvoicePage />} />
+          <Route path="/stafftargets" element={<StaffTargets />} />
         </Route>
       )}
     </Routes>

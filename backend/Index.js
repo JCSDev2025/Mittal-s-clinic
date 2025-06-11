@@ -10,6 +10,7 @@ import serviceRoutes from "./app/routes/serviceRoutes.js";
 import billRoutes from "./app/routes/bills.js";
 import appointmentsRoutes from "./app/routes/appointments.js";
 import staffRoutes from "./app/routes/staffRoutes.js";
+import staffTargetRoutes from "./app/routes/staffTargets.js";
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/bills', billRoutes);
 app.use('/api/appointments', appointmentsRoutes);
 app.use('/api/staff', staffRoutes);
+app.use('/api/targets/staff', staffTargetRoutes);
 
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
