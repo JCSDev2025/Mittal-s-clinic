@@ -108,19 +108,19 @@ const InvoicePage = () => {
         </div>
 
         {/* Client Details */}
-        <div className="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div className=" flex mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <h3 className="text-lg font-semibold text-blue-700 mb-2">Bill To:</h3>
-          <p className="text-md font-medium text-gray-800">{bill.clientName}</p>
+          <p className=" px-3 text-lg font-medium text-gray-800">{bill.clientName}</p>
         </div>
 
         {/* Services Table */}
         <table className="w-full text-sm text-left table-auto border-collapse mb-12">
           <thead>
             <tr className="bg-blue-100 text-blue-800 uppercase text-xs font-semibold">
-              <th className="py-3 px-4 border-b border-blue-200">Description</th>
-              <th className="py-3 px-4 border-b border-blue-200 text-center">Qty</th>
-              <th className="py-3 px-4 border-b border-blue-200 text-right">Unit Price</th>
-              <th className="py-3 px-4 border-b border-blue-200 text-right">Amount</th>
+              <th className="py-3 px-4 border-b border-blue-200 text-lg">Description</th>
+              <th className="py-3 px-4 border-b border-blue-200 text-center text-lg">Qty</th>
+              <th className="py-3 px-4 border-b border-blue-200 text-right text-lg">Unit Price</th>
+              <th className="py-3 px-4 border-b border-blue-200 text-right text-lg">Amount</th>
             </tr>
           </thead>
           <tbody>
@@ -172,9 +172,6 @@ const InvoicePage = () => {
               <p>Total: {bill.totalSessions || 0}</p>
               <p>Completed: {bill.sessionsCompleted || 0}</p>
               <p>Pending: {(bill.totalSessions - bill.sessionsCompleted) || 0}</p>
-              <p className="font-semibold mt-2">Billing Info:</p>
-              <p>Amount Paid: {formatCurrency(bill.amountPaid)}</p>
-              <p>Pending: {formatCurrency(bill.totalAmount - bill.amountPaid)}</p>
             </div>
             <div className="text-right text-xs text-gray-600">
               <p className="font-semibold text-blue-700">Mittal's Hair Skin & Laser</p>

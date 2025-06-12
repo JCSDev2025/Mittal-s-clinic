@@ -5,6 +5,8 @@ import { PencilSquareIcon, TrashIcon, UserGroupIcon } from '@heroicons/react/24/
 import { toast, ToastContainer } from 'react-toastify';
 // Removed: import 'react-toastify/dist/ReactToastify.css'; // Removed to prevent compilation errors
 
+const ITEMS_PER_PAGE = 10;
+
 const Clients = () => {
     const navigate = useNavigate();
     const [clients, setClients] = useState([]);
@@ -20,6 +22,11 @@ const Clients = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [clientToDeleteId, setClientToDeleteId] = useState(null);
 
+    // Helper to capitalize the first letter of a string
+    const capitalizeFirstLetter = (string) => {
+        if (!string) return '';
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    };
 
     useEffect(() => {
         const fetchClients = async () => {
@@ -204,7 +211,7 @@ const Clients = () => {
                     <thead className="bg-emerald-600 text-white">
                         <tr>
                             {['S.No', 'Name', 'Age', 'Mobile', 'Address', 'DOB', 'Gender', 'Actions'].map((head, i) => (
-                                <th key={i} className="px-4 py-3 border-r last:border-r-0 whitespace-nowrap text-sm md:text-base">
+                                <th key={i} className="px-4 py-3 border-r last:border-r-0 whitespace-nowrap text-sm md:text-base text-center">
                                     {head}
                                 </th>
                             ))}
@@ -218,12 +225,13 @@ const Clients = () => {
                                     className={`transition hover:bg-emerald-50 ${idx % 2 ? 'bg-white' : 'bg-emerald-50'}`}
                                 >
                                     <td className="px-4 py-3 text-center">{indexOfFirstClient + idx + 1}</td>
-                                    <td className="px-4 py-3 capitalize">{client.name}</td>
+                                    {/* Capitalized Name, applied text-center */}
+                                    <td className="px-4 py-3 text-center">{capitalizeFirstLetter(client.name)}</td>
                                     <td className="px-4 py-3 text-center">{client.age}</td>
                                     <td className="px-4 py-3 text-center">{formatMobile(client.mobile)}</td>
-                                    <td className="px-4 py-3 capitalize">{client.address}</td>
+                                    <td className="px-4 py-3 text-center">{capitalizeFirstLetter(client.address)}</td> {/* Capitalized Address */}
                                     <td className="px-4 py-3 text-center">{formatDate(client.dob)}</td>
-                                    <td className="px-4 py-3 text-center">{client.gender}</td>
+                                    <td className="px-4 py-3 text-center">{capitalizeFirstLetter(client.gender)}</td> {/* Capitalized Gender */}
                                     <td className="px-4 py-3 text-center flex flex-row justify-center gap-2">
                                         <button
                                             onClick={() => handleEdit(client)}

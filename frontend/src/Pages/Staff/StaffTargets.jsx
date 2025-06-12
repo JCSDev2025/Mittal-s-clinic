@@ -9,6 +9,8 @@ const StaffTargets = () => {
   const [staffList, setStaffList] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
+  // New state for target type
+  const [targetType, setTargetType] = useState('');
 
   const [assignedTargets, setAssignedTargets] = useState([]);
   const [editingTargetId, setEditingTargetId] = useState(null);
@@ -20,11 +22,15 @@ const StaffTargets = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [targetToDeleteId, setTargetToDeleteId] = useState(null);
 
+  // Define allowed target types for the dropdown
+  const targetTypes = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly'];
+
 
   // Effect to fetch staff list
   useEffect(() => {
     const fetchStaff = async () => {
       try {
+        // Fetching staff list from the provided API endpoint
         const res = await axios.get('/api/staff'); // API connection for staff list
         setStaffList(res.data);
       } catch (error) {
@@ -33,12 +39,13 @@ const StaffTargets = () => {
       }
     };
     fetchStaff();
-  }, []);
+  }, []); // Empty dependency array means this runs once on mount
 
   // Effect to fetch targets (depends on staffList for populating staff names)
   useEffect(() => {
     const fetchTargets = async () => {
       try {
+        // Fetching targets from the provided API endpoint
         const res = await axios.get('/api/targets/staff');
         setAssignedTargets(res.data);
       } catch (error) {
@@ -47,40 +54,52 @@ const StaffTargets = () => {
       }
     };
 
+    // Only fetch targets if staffList is populated to ensure staff names can be displayed
     if (staffList.length > 0) {
       fetchTargets();
     }
-  }, [staffList]);
+  }, [staffList]); // Rerun when staffList changes
 
   // Handles both assigning a new target and updating an existing one
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!selectedStaff || !targetAmount) {
+    // Validate form fields
+    if (!selectedStaff || !targetAmount || !targetType) { // Include targetType in validation
       toast.warn('Please fill all fields.', { position: 'top-right' });
       return;
     }
 
+    // Validate target amount
     if (parseFloat(targetAmount) <= 0) {
       toast.error('Target amount must be a positive number.', { position: 'top-right' });
+      return;
+    }
+
+    // Validate target type against allowed values
+    if (!targetTypes.includes(targetType)) {
+      toast.error('Invalid target type selected.', { position: 'top-right' });
       return;
     }
 
     const targetData = {
       staffId: selectedStaff,
       targetAmount: parseFloat(targetAmount),
+      targetType: targetType, // Include targetType in data
     };
 
     try {
       let res;
       if (editingTargetId) {
-        res = await axios.put('/api/targets/staff/${editingTargetId}', targetData);
+        // PUT request for update
+        res = await axios.put(`/api/targets/staff/${editingTargetId}`, targetData);
         setAssignedTargets((prev) =>
           prev.map((target) => (target._id === editingTargetId ? res.data : target))
         );
         toast.success('Staff target updated successfully!', { position: 'top-right' });
       } else {
-        res = await axios.post('api/targets/staff', targetData);
+        // POST request for new assignment
+        res = await axios.post('/api/targets/staff', targetData);
         setAssignedTargets((prev) => [res.data, ...prev]);
         toast.success('Staff target assigned successfully!', { position: 'top-right' });
       }
@@ -88,6 +107,7 @@ const StaffTargets = () => {
       // Reset form fields and editing state
       setSelectedStaff('');
       setTargetAmount('');
+      setTargetType(''); // Reset target type
       setEditingTargetId(null);
     } catch (error) {
       console.error('Error:', error);
@@ -100,6 +120,7 @@ const StaffTargets = () => {
     // Set form fields with data from the target being edited
     setSelectedStaff(target.staffId._id);
     setTargetAmount(target.targetAmount.toString());
+    setTargetType(target.targetType); // Set targetType for edit
     setEditingTargetId(target._id);
   };
 
@@ -114,13 +135,15 @@ const StaffTargets = () => {
     if (!targetToDeleteId) return; // Should not happen if modal is correctly triggered
 
     try {
-      await axios.delete('/api/targets/staff/${targetToDeleteId}');
+      // DELETE request
+      await axios.delete(`/api/targets/staff/${targetToDeleteId}`);
       setAssignedTargets((prev) => prev.filter((item) => item._id !== targetToDeleteId));
       toast.success('Staff target deleted successfully!', { position: 'top-right' });
       // If the deleted item was the one being edited, clear the editing state
       if (editingTargetId === targetToDeleteId) {
         setSelectedStaff('');
         setTargetAmount('');
+        setTargetType(''); // Reset target type
         setEditingTargetId(null);
       }
     } catch (error) {
@@ -143,6 +166,7 @@ const StaffTargets = () => {
     setEditingTargetId(null);
     setSelectedStaff('');
     setTargetAmount('');
+    setTargetType(''); // Reset target type
   };
 
   // Filter assigned targets based on search term
@@ -164,7 +188,7 @@ const StaffTargets = () => {
         pauseOnHover
         theme="colored"
       />
-      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 py-10 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 to-indigo-100 py-10 px-4 sm:px-6 lg:px-8 font-inter">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl font-bold text-center text-indigo-800 mb-10 drop-shadow">
             {editingTargetId ? 'Edit Staff Target' : 'Assign Target to Staff Member'}
@@ -208,6 +232,25 @@ const StaffTargets = () => {
                   className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
+
+              {/* New field for Target Type */}
+              <div className="md:col-span-2"> {/* Span full width for better layout */}
+                <label htmlFor="target-type" className="block text-gray-700 font-semibold mb-1">Target Type</label>
+                <select
+                  id="target-type"
+                  value={targetType}
+                  onChange={(e) => setTargetType(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">-- Select Target Type --</option>
+                  {targetTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
             </div>
 
             <div className="pt-4 flex justify-end gap-3">
@@ -230,7 +273,7 @@ const StaffTargets = () => {
           </form>
 
           {/* Search Bar for Assigned Targets */}
-          <div className="mb-6 relative flex items-center justify-center  group w-1/3 ">
+          <div className="mb-6 relative flex items-center justify-center group w-full md:w-1/3 mx-auto">
             <input
               type="text"
               placeholder="Search targets by staff name..."
@@ -268,6 +311,7 @@ const StaffTargets = () => {
                       <th className="py-3 px-4 text-left">S.No</th>
                       <th className="py-3 px-4 text-left">Staff Member</th>
                       <th className="py-3 px-4 text-left">Target (₹)</th>
+                      <th className="py-3 px-4 text-left">Target Type</th> {/* Display new header */}
                       <th className="py-3 px-4 text-left">Actions</th>
                     </tr>
                   </thead>
@@ -280,6 +324,7 @@ const StaffTargets = () => {
                         <td className="py-3 px-4">{index + 1}</td>
                         <td className="py-3 px-4">{entry.staffId?.name || 'Unknown'}</td>
                         <td className="py-3 px-4">₹{entry.targetAmount.toLocaleString()}</td>
+                        <td className="py-3 px-4">{entry.targetType}</td> {/* Display targetType */}
                         <td className="py-3 px-4 space-x-2">
                           <button
                             onClick={() => handleEdit(entry)}

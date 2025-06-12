@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify'; // Ensure 'toast' is imported here
 
 const AddBilling = () => {
+    // State to hold form data
     const [formData, setFormData] = useState({
         clientName: '',
-        assignedStaff: '', // Changed from assignedDoctor to assignedStaff
+        assignedStaff: '',
         services: '',
         totalSessions: '',
         sessionsCompleted: '',
@@ -18,52 +20,53 @@ const AddBilling = () => {
         pendingAmount: '',
     });
 
+    // States for dropdown options fetched from APIs
     const [clientOptions, setClientOptions] = useState([]);
-    const [staffOptions, setStaffOptions] = useState([]); // Changed from doctorOptions to staffOptions
+    const [staffOptions, setStaffOptions] = useState([]);
     const [serviceOptions, setServiceOptions] = useState([]);
-    const [error, setError] = useState('');
+    const [error, setError] = useState(''); // State for displaying form-specific errors
 
-    const navigate = useNavigate();
-    const { id } = useParams();
+    const navigate = useNavigate(); // Hook for programmatic navigation
+    const { id } = useParams(); // Hook to get URL parameters (for edit mode)
 
+    // Effect to fetch initial dropdown data (clients, staff, services)
     useEffect(() => {
         const fetchDropdownData = async () => {
             try {
-                // Fetch staff data from the appropriate endpoint
-                // IMPORTANT: Replace '/api/staff' with your actual staff listing API endpoint if different.
-                // The provided backend code for StaffTarget does not directly give a list of staff.
-                // You would typically have a separate '/api/staff' route for this.
+                // Now fetching actual data from backend API endpoints
                 const [clientsRes, staffRes, servicesRes] = await Promise.all([
-                    axios.get('/api/clients'),
-                    axios.get('/api/staff'), // <--- ASSUMING THIS ENDPOINT EXISTS AND RETURNS { _id, name }
-                    axios.get('/api/services'),
+                    axios.get('/api/clients'), // Fetch actual client data
+                    axios.get('/api/staff'),   // Fetch actual staff data
+                    axios.get('/api/services'), // Fetch actual service data
                 ]);
 
                 setClientOptions(clientsRes.data);
-                setStaffOptions(staffRes.data); // Set staff options
+                setStaffOptions(staffRes.data);
                 setServiceOptions(servicesRes.data);
             } catch (err) {
                 console.error('Dropdown fetch error:', err);
-                setError('Failed to load dropdown data. Please check network connection.');
+                setError('Failed to load dropdown data. Please check your network connection and API endpoints.');
             }
         };
 
         fetchDropdownData();
-    }, []);
+    }, []); // Empty dependency array means this effect runs once on component mount
 
+    // Effect to load bill data when in edit mode (if 'id' is present in URL)
     useEffect(() => {
         if (id) {
-            axios.get(`/api/bills/${id}`)
+            axios.get(`/api/bills/${id}`) // Fetch actual bill data for editing
                 .then((res) => {
                     const bill = res.data;
                     setFormData({
                         clientName: bill.clientName,
-                        assignedStaff: bill.assignedStaff, // Changed from assignedDoctor to assignedStaff
+                        assignedStaff: bill.assignedStaff,
                         services: bill.services,
                         totalSessions: bill.totalSessions,
                         sessionsCompleted: bill.sessionsCompleted,
                         cost: bill.cost,
                         amountPaid: bill.amountPaid,
+                        // Format date to 'YYYY-MM-DD' for input type="date"
                         date: bill.date.split('T')[0],
                         paymentMethod: bill.paymentMethod,
                         notes: bill.notes,
@@ -73,77 +76,93 @@ const AddBilling = () => {
                 })
                 .catch((err) => {
                     console.error('Error loading bill:', err);
-                    setError('Failed to load bill details.');
+                    setError('Failed to load bill details for editing.');
                 });
         }
-    }, [id]);
+    }, [id]); // Rerun when 'id' changes
 
+    // Effect to calculate Total Amount (including 18% GST) based on Cost
     useEffect(() => {
         const cost = parseFloat(formData.cost);
         let calculatedTotalAmount = '';
-        if (!isNaN(cost)) {
+        if (!isNaN(cost) && cost >= 0) {
             const gstAmount = cost * 0.18;
             calculatedTotalAmount = (cost + gstAmount).toFixed(2);
         }
+        // Update totalAmount. If the user manually edits totalAmount, this will override
+        // their edit if 'cost' changes again. This is by design to keep totalAmount
+        // in sync with cost unless explicitly manually overridden without changing cost.
         setFormData((prev) => ({
             ...prev,
             totalAmount: calculatedTotalAmount,
         }));
-    }, [formData.cost]);
+    }, [formData.cost]); // Recalculate when 'cost' changes
 
+    // Effect to calculate Pending Amount based on Total Amount and Amount Paid
     useEffect(() => {
         const total = parseFloat(formData.totalAmount);
         const paid = parseFloat(formData.amountPaid);
         let calculatedPendingAmount = '';
 
-        if (!isNaN(total) && !isNaN(paid)) {
-            calculatedPendingAmount = (total - paid).toFixed(2);
-        } else if (!isNaN(total) && isNaN(paid)) {
-            calculatedPendingAmount = total.toFixed(2);
+        if (!isNaN(total) && total >= 0) {
+            if (!isNaN(paid) && paid >= 0) {
+                calculatedPendingAmount = (total - paid).toFixed(2);
+            } else {
+                // If total is valid but paid is not, pending is total
+                calculatedPendingAmount = total.toFixed(2);
+            }
         } else {
-            calculatedPendingAmount = '';
+            calculatedPendingAmount = ''; // Reset if total is invalid
         }
 
         setFormData((prev) => ({
             ...prev,
             pendingAmount: calculatedPendingAmount,
         }));
-    }, [formData.totalAmount, formData.amountPaid]);
+    }, [formData.totalAmount, formData.amountPaid]); // Recalculate when totalAmount or amountPaid changes
 
+    // Generic handleChange function for all form inputs
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        if (['totalSessions', 'sessionsCompleted', 'cost', 'amountPaid'].includes(name)) {
+        // Validation for numerical input fields
+        if (['totalSessions', 'sessionsCompleted', 'cost', 'amountPaid', 'totalAmount', 'pendingAmount'].includes(name)) {
+            // Allow empty string or valid numbers (integers or decimals)
             if (value === '' || /^\d*\.?\d*$/.test(value)) {
                 setFormData((prev) => ({ ...prev, [name]: value }));
             }
         } else {
+            // For non-numerical inputs, update directly
             setFormData((prev) => ({ ...prev, [name]: value }));
         }
     };
 
+    // Handle form submission (Add or Update)
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
+        setError(''); // Clear previous errors
 
         const {
             clientName,
             services,
             date,
-            assignedStaff, // Changed from assignedDoctor to assignedStaff
+            assignedStaff,
             totalSessions,
             sessionsCompleted,
-            cost,
+            cost, // Included for backend, even if it's the base for totalAmount
             amountPaid,
             totalAmount,
             pendingAmount,
+            paymentMethod // Include paymentMethod
         } = formData;
 
-        if (!clientName || !services || !date || !assignedStaff || !totalSessions || !sessionsCompleted) {
+        // Basic form validation for required fields
+        if (!clientName || !services || !date || !assignedStaff || totalSessions === '' || sessionsCompleted === '') {
             setError('Please fill all required fields.');
             return;
         }
 
+        // Convert string values to numbers for validation
         const numTotalSessions = Number(totalSessions);
         const numSessionsCompleted = Number(sessionsCompleted);
         const numCost = Number(cost);
@@ -152,38 +171,62 @@ const AddBilling = () => {
         const numPendingAmount = Number(pendingAmount);
 
 
+        // More detailed numerical validations
         if (
             numTotalSessions <= 0 ||
             numSessionsCompleted < 0 ||
             numSessionsCompleted > numTotalSessions ||
-            (cost !== '' && numCost < 0) ||
-            (amountPaid !== '' && numAmountPaid < 0)
+            (cost !== '' && (isNaN(numCost) || numCost < 0)) ||
+            (amountPaid !== '' && (isNaN(numAmountPaid) || numAmountPaid < 0))
         ) {
             setError('Please enter valid positive numerical values for sessions, cost, and amount paid.');
             return;
         }
 
+        // Validate calculated amounts
         if (isNaN(numTotalAmount) || numTotalAmount < 0 || isNaN(numPendingAmount) || numPendingAmount < 0) {
             setError('Calculated amounts (Total Amount, Pending Amount) must be valid positive numbers.');
             return;
         }
 
-
         try {
             if (id) {
+                // This block sends a PUT request to update an existing bill.
                 await axios.put(`/api/bills/${id}`, formData);
+                console.log(`Updated bill ID: ${id}`, formData);
+                toast.success('Bill updated successfully!', { position: 'top-right' });
             } else {
+                // This block sends a POST request to create a new bill.
                 await axios.post('/api/bills', formData);
+                console.log('New bill created:', formData);
+                toast.success('Bill saved successfully!', { position: 'top-right' });
             }
-            navigate('/billing');
+            navigate('/billing'); // Navigate back to the billing list on successful submission
         } catch (err) {
             console.error('Error saving bill:', err);
-            setError('Error saving bill. Please try again.');
+            // Display a more user-friendly error message from the backend if available
+            const errorMessage = err.response?.data?.message || 'Error saving bill. Please try again.';
+            setError(errorMessage);
+            toast.error(errorMessage, { position: 'top-right' });
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-green-50 via-white to-green-50 px-6 py-12">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-green-50 via-white to-green-50 px-6 py-12 font-sans">
+            {/* ToastContainer for notifications */}
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light" // Changed theme for a cleaner look
+            />
+
             <form
                 onSubmit={handleSubmit}
                 className="bg-white shadow-xl rounded-3xl w-full max-w-4xl p-10 sm:p-12 md:p-16"
@@ -192,6 +235,7 @@ const AddBilling = () => {
                     {id ? 'Edit Bill' : 'Add New Bill'}
                 </h2>
 
+                {/* Error message display */}
                 {error && (
                     <div className="bg-red-100 text-red-700 text-center py-2 rounded-md mb-6 font-semibold shadow-sm">
                         {error}
@@ -199,10 +243,11 @@ const AddBilling = () => {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Client Name */}
+                    {/* Client Name Dropdown */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Client Name <span className="text-red-500">*</span></label>
+                        <label htmlFor="clientName" className="block text-sm font-semibold text-gray-700 mb-2">Client Name <span className="text-red-500">*</span></label>
                         <select
+                            id="clientName"
                             name="clientName"
                             value={formData.clientName}
                             onChange={handleChange}
@@ -215,13 +260,12 @@ const AddBilling = () => {
                             ))}
                         </select>
                     </div>
-                     
 
-
-                    {/*Staff Name  */}
+                    {/* Assigned Staff Dropdown */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Assigned Staff <span className="text-red-500">*</span></label>
+                        <label htmlFor="assignedStaff" className="block text-sm font-semibold text-gray-700 mb-2">Assigned Staff <span className="text-red-500">*</span></label>
                         <select
+                            id="assignedStaff"
                             name="assignedStaff"
                             value={formData.assignedStaff}
                             onChange={handleChange}
@@ -238,10 +282,11 @@ const AddBilling = () => {
                         </select>
                     </div>
 
-                    {/* Services */}
+                    {/* Services Dropdown */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Service <span className="text-red-500">*</span></label>
+                        <label htmlFor="services" className="block text-sm font-semibold text-gray-700 mb-2">Service <span className="text-red-500">*</span></label>
                         <select
+                            id="services"
                             name="services"
                             value={formData.services}
                             onChange={handleChange}
@@ -255,10 +300,11 @@ const AddBilling = () => {
                         </select>
                     </div>
 
-                    {/* Total Sessions */}
+                    {/* Total Sessions Input */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Total Sessions <span className="text-red-500">*</span></label>
+                        <label htmlFor="totalSessions" className="block text-sm font-semibold text-gray-700 mb-2">Total Sessions <span className="text-red-500">*</span></label>
                         <input
+                            id="totalSessions"
                             type="number"
                             name="totalSessions"
                             value={formData.totalSessions}
@@ -270,26 +316,28 @@ const AddBilling = () => {
                         />
                     </div>
 
-                    {/* Sessions Completed */}
+                    {/* Sessions Completed Input */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Sessions Completed <span className="text-red-500">*</span></label>
+                        <label htmlFor="sessionsCompleted" className="block text-sm font-semibold text-gray-700 mb-2">Sessions Completed <span className="text-red-500">*</span></label>
                         <input
+                            id="sessionsCompleted"
                             type="number"
                             name="sessionsCompleted"
                             value={formData.sessionsCompleted}
                             onChange={handleChange}
                             required
                             min="0"
-                            max={formData.totalSessions || undefined}
+                            max={formData.totalSessions !== '' ? parseFloat(formData.totalSessions) : undefined}
                             className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
                             placeholder="Enter sessions completed"
                         />
                     </div>
 
-                    {/* Cost */}
+                    {/* Cost Input */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Cost (₹)</label>
+                        <label htmlFor="cost" className="block text-sm font-semibold text-gray-700 mb-2">Cost (₹)</label>
                         <input
+                            id="cost"
                             type="number"
                             name="cost"
                             value={formData.cost}
@@ -300,29 +348,32 @@ const AddBilling = () => {
                         />
                     </div>
 
-                    {/* Total Amount with GST (Read-only) */}
+                    {/* Total Amount with GST (Editable) */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Total Amount (incl. 18% GST)</label>
+                        <label htmlFor="totalAmount" className="block text-sm font-semibold text-gray-700 mb-2">Total Amount (incl. 18% GST)</label>
                         <input
-                            type="text"
+                            id="totalAmount"
+                            type="number"
                             name="totalAmount"
                             value={formData.totalAmount}
-                            readOnly
-                            className="w-full px-5 py-3 bg-gray-100 border border-green-300 rounded-lg focus:outline-none shadow-sm text-gray-700"
+                            onChange={handleChange}
+                            min="0"
+                            className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
                             placeholder="Calculated total amount"
                         />
                     </div>
 
-                    {/* Amount Paid */}
+                    {/* Amount Paid Input */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Amount Paid (₹)</label>
+                        <label htmlFor="amountPaid" className="block text-sm font-semibold text-gray-700 mb-2">Amount Paid (₹)</label>
                         <input
+                            id="amountPaid"
                             type="number"
                             name="amountPaid"
                             value={formData.amountPaid}
                             onChange={handleChange}
                             min="0"
-                            max={formData.totalAmount ? parseFloat(formData.totalAmount) : undefined}
+                            max={formData.totalAmount !== '' ? parseFloat(formData.totalAmount) : undefined}
                             className="w-full px-5 py-3 border border-green-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-300 transition-shadow shadow-sm"
                             placeholder="Amount paid by client"
                         />
@@ -330,8 +381,9 @@ const AddBilling = () => {
 
                     {/* Pending Amount (Read-only) */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Pending Amount (₹)</label>
+                        <label htmlFor="pendingAmount" className="block text-sm font-semibold text-gray-700 mb-2">Pending Amount (₹)</label>
                         <input
+                            id="pendingAmount"
                             type="text"
                             name="pendingAmount"
                             value={formData.pendingAmount}
@@ -341,10 +393,11 @@ const AddBilling = () => {
                         />
                     </div>
 
-                    {/* Date */}
+                    {/* Date Input */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Date <span className="text-red-500">*</span></label>
+                        <label htmlFor="date" className="block text-sm font-semibold text-gray-700 mb-2">Date <span className="text-red-500">*</span></label>
                         <input
+                            id="date"
                             type="date"
                             name="date"
                             value={formData.date}
@@ -354,10 +407,11 @@ const AddBilling = () => {
                         />
                     </div>
 
-                    {/* Payment Method */}
+                    {/* Payment Method Dropdown */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Payment Method</label>
+                        <label htmlFor="paymentMethod" className="block text-sm font-semibold text-gray-700 mb-2">Payment Method</label>
                         <select
+                            id="paymentMethod"
                             name="paymentMethod"
                             value={formData.paymentMethod}
                             onChange={handleChange}
@@ -371,10 +425,11 @@ const AddBilling = () => {
                         </select>
                     </div>
 
-                    {/* Remarks */}
+                    {/* Remarks Textarea */}
                     <div className="md:col-span-2">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Remarks</label>
+                        <label htmlFor="notes" className="block text-sm font-semibold text-gray-700 mb-2">Remarks</label>
                         <textarea
+                            id="notes"
                             name="notes"
                             rows="4"
                             value={formData.notes}
@@ -385,6 +440,7 @@ const AddBilling = () => {
                     </div>
                 </div>
 
+                {/* Form Action Buttons */}
                 <div className="flex justify-end gap-6 mt-10">
                     <button
                         type="button"

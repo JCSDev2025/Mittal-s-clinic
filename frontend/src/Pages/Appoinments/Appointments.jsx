@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 // Removed: import 'react-toastify/dist/ReactToastify.css'; // Removed to prevent compilation errors
@@ -8,7 +9,7 @@ const ITEMS_PER_PAGE = 10;
 const Appointments = () => {
   // Using window.location.href for navigation as react-router-dom is not in the provided context
   // If react-router-dom is available in your full project, you can use `useNavigate`
-  // const navigate = useNavigate();
+  const navigate = useNavigate(); // Keep useNavigate for consistency with other components
 
   const [appointments, setAppointments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -23,6 +24,11 @@ const Appointments = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [appointmentToDeleteId, setAppointmentToDeleteId] = useState(null);
 
+  // Helper to capitalize the first letter of a string
+  const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
 
   useEffect(() => {
     fetchAppointments();
@@ -168,7 +174,7 @@ const Appointments = () => {
 
       <div className="mb-8 w-full max-w-7xl flex flex-col sm:flex-row justify-between items-center gap-4">
         <button
-          onClick={() => (window.location.href = '/add-appointment')}
+          onClick={() => navigate('/add-appointment')} // Changed to use navigate
           className="px-8 py-3 bg-teal-700 text-white font-semibold rounded-lg shadow-lg hover:bg-teal-800 transition-colors duration-300 focus:outline-none focus:ring-4 focus:ring-teal-400"
         >
           Add New Appointment
@@ -212,16 +218,17 @@ const Appointments = () => {
         <table className="w-full min-w-[900px] text-left text-gray-700">
           <thead className="bg-teal-700 text-white uppercase text-sm tracking-wide select-none">
             <tr>
-              <th className="px-5 py-4 border-r border-teal-600">S.No</th>
-              <th className="px-5 py-4 border-r border-teal-600">Client Name</th>
-              <th className="px-5 py-4 border-r border-teal-600">Age</th>
-              <th className="px-5 py-4 border-r border-teal-600">Gender</th>
-              <th className="px-5 py-4 border-r border-teal-600">Contact</th>
-              <th className="px-5 py-4 border-r border-teal-600">Service</th>
-              <th className="px-5 py-4 border-r border-teal-600">Doctor Name</th>
-              <th className="px-5 py-4 border-r border-teal-600">Date</th>
-              <th className="px-5 py-4 border-r border-teal-600">Time</th>
-              <th className="px-5 py-4">Actions</th>
+              {/* Applied text-center to all table headers */}
+              <th className="px-5 py-4 border-r border-teal-600 text-center">S.No</th>
+              <th className="px-5 py-4 border-r border-teal-600 text-center">Client Name</th>
+              <th className="px-5 py-4 border-r border-teal-600 text-center">Age</th>
+              <th className="px-5 py-4 border-r border-teal-600 text-center">Gender</th>
+              <th className="px-5 py-4 border-r border-teal-600 text-center">Contact</th>
+              <th className="px-5 py-4 border-r border-teal-600 text-center">Service</th>
+              <th className="px-5 py-4 border-r border-teal-600 text-center">Doctor Name</th>
+              <th className="px-5 py-4 border-r border-teal-600 text-center">Date</th>
+              <th className="px-5 py-4 border-r border-teal-600 text-center">Time</th>
+              <th className="px-5 py-4 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -233,16 +240,17 @@ const Appointments = () => {
                     idx % 2 === 0 ? 'bg-teal-50' : 'bg-white'
                   } hover:bg-teal-100 transition-colors duration-300`}
                 >
-                  <td className="px-5 py-3 border-r border-teal-100 font-semibold">{startIndex + idx + 1}</td>
-                  <td className="px-5 py-3 border-r border-teal-100">{appt.clientName}</td>
-                  <td className="px-5 py-3 border-r border-teal-100">{appt.age}</td>
-                  <td className="px-5 py-3 border-r border-teal-100">{appt.gender}</td>
-                  <td className="px-5 py-3 border-r border-teal-100">{appt.contact}</td>
-                  <td className="px-5 py-3 border-r border-teal-100">{appt.service}</td>
-                  <td className="px-5 py-3 border-r border-teal-100">{appt.doctorName}</td>
-                  <td className="px-5 py-3 border-r border-teal-100">{appt.date}</td>
-                  <td className="px-5 py-3 border-r border-teal-100">{appt.time}</td>
-                  <td className="px-5 py-3 flex flex-col sm:flex-row gap-2 justify-center">
+                  <td className="px-5 py-3 border-r border-teal-100 font-semibold text-center">{startIndex + idx + 1}</td>
+                  {/* Capitalized Client Name and Service, applied text-center */}
+                  <td className="px-5 py-3 border-r border-teal-100 text-center">{capitalizeFirstLetter(appt.clientName)}</td>
+                  <td className="px-5 py-3 border-r border-teal-100 text-center">{appt.age}</td>
+                  <td className="px-5 py-3 border-r border-teal-100 text-center">{capitalizeFirstLetter(appt.gender)}</td> {/* Capitalize Gender */}
+                  <td className="px-5 py-3 border-r border-teal-100 text-center">{appt.contact}</td>
+                  <td className="px-5 py-3 border-r border-teal-100 text-center">{capitalizeFirstLetter(appt.service)}</td>
+                  <td className="px-5 py-3 border-r border-teal-100 text-center">{capitalizeFirstLetter(appt.doctorName)}</td> {/* Capitalize Doctor Name */}
+                  <td className="px-5 py-3 border-r border-teal-100 text-center">{appt.date}</td>
+                  <td className="px-5 py-3 border-r border-teal-100 text-center">{appt.time}</td>
+                  <td className="px-5 py-3 flex flex-col sm:flex-row gap-2 justify-center items-center"> {/* Centered buttons */}
                     <button
                       onClick={() => handleEdit(appt)}
                       className="bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-1 rounded-md text-sm shadow-md transition-colors duration-300"

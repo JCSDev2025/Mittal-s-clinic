@@ -3,23 +3,27 @@ import StaffTarget from '../models/StaffTarget.js';
 
 const router = express.Router();
 
+// Allowed types
+const validTargetTypes = ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly'];
+
 // POST - assign new target to staff
 router.post('/', async (req, res) => {
   try {
-    // Destructure without targetType
-    const { staffId, targetAmount } = req.body;
+    const { staffId, targetAmount, targetType } = req.body;
 
-    // Validation without targetType
-    if (!staffId || !targetAmount) {
-      return res.status(400).json({ message: 'Staff ID and Target Amount are required' }); // Updated message
+    if (!staffId || !targetAmount || !targetType) {
+      return res.status(400).json({ message: 'Staff ID, Target Amount, and Target Type are required' });
+    }
+
+    if (!validTargetTypes.includes(targetType)) {
+      return res.status(400).json({ message: 'Invalid target type' });
     }
 
     if (typeof targetAmount !== 'number' || targetAmount <= 0) {
       return res.status(400).json({ message: 'Target amount must be a positive number.' });
     }
 
-    // Create new target without targetType
-    const newTarget = new StaffTarget({ staffId, targetAmount });
+    const newTarget = new StaffTarget({ staffId, targetAmount, targetType });
     await newTarget.save();
 
     const populatedTarget = await newTarget.populate('staffId', 'name');
@@ -30,7 +34,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET - fetch all staff targets (no change needed here for targetType removal)
+// GET - fetch all staff targets
 router.get('/', async (req, res) => {
   try {
     const targets = await StaffTarget.find()
@@ -48,22 +52,23 @@ router.get('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    // Destructure without targetType
-    const { staffId, targetAmount } = req.body;
+    const { staffId, targetAmount, targetType } = req.body;
 
-    // Validation without targetType
-    if (!staffId || !targetAmount) {
-      return res.status(400).json({ message: 'Staff ID and Target Amount are required' }); // Updated message
+    if (!staffId || !targetAmount || !targetType) {
+      return res.status(400).json({ message: 'Staff ID, Target Amount, and Target Type are required' });
+    }
+
+    if (!validTargetTypes.includes(targetType)) {
+      return res.status(400).json({ message: 'Invalid target type' });
     }
 
     if (typeof targetAmount !== 'number' || targetAmount <= 0) {
       return res.status(400).json({ message: 'Target amount must be a positive number.' });
     }
 
-    // Update target without targetType
     const updatedTarget = await StaffTarget.findByIdAndUpdate(
       id,
-      { staffId, targetAmount },
+      { staffId, targetAmount, targetType },
       { new: true, runValidators: true }
     ).populate('staffId', 'name');
 
@@ -78,7 +83,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE - remove a staff target by ID (no change needed here)
+// DELETE - remove a staff target by ID
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;

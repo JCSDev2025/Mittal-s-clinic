@@ -18,6 +18,11 @@ const Billing = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [billToDeleteId, setBillToDeleteId] = useState(null);
 
+    // Helper to capitalize the first letter of a string
+    const capitalizeFirstLetter = (string) => {
+        if (!string) return '';
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    };
 
     useEffect(() => {
         const fetchBills = async () => {
@@ -128,7 +133,7 @@ const Billing = () => {
                 <div className="relative flex items-center group w-full sm:w-1/4">
                     <input
                         type="text"
-                        placeholder="Search Biils"
+                        placeholder="Search Bills"
                         className="w-full pl-10 pr-10 py-2 border border-green-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 text-green-800 transition-all duration-200"
                         value={searchTerm}
                         onChange={(e) => {
@@ -162,20 +167,21 @@ const Billing = () => {
                 <table className="w-full min-w-[1700px] text-left border-collapse">
                     <thead className="bg-green-600 text-white select-none">
                         <tr>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">S.no</th>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">Client Name</th>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">Staff Name</th>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">Services</th>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">Total Sessions</th>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">Sessions Completed</th>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">Cost (₹)</th>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">Total Amount (incl. GST)</th>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">Amount Paid (₹)</th>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">Pending Amount (₹)</th>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">Date</th>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">Payment Method</th>
-                            <th className="px-5 py-3 border-r whitespace-nowrap">Remarks</th>
-                            <th className="px-5 py-3 whitespace-nowrap">Actions</th>
+                            {/* Applied text-center to all table headers */}
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">S.no</th>
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">Client Name</th>
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">Staff Name</th>
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">Services</th>
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">Total Sessions</th>
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">Sessions Completed</th>
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">Cost (₹)</th>
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">Total Amount (incl. GST)</th>
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">Amount Paid (₹)</th>
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">Pending Amount (₹)</th>
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">Date</th>
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">Payment Method</th>
+                            <th className="px-5 py-3 border-r whitespace-nowrap text-center">Remarks</th>
+                            <th className="px-5 py-3 whitespace-nowrap text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -185,28 +191,29 @@ const Billing = () => {
                                     key={bill._id}
                                     className="border-b hover:bg-green-50 transition-colors"
                                 >
-                                    <td className="px-5 py-3 border-r whitespace-nowrap">
+                                    <td className="px-5 py-3 border-r whitespace-nowrap text-center">
                                         {(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
                                     </td>
-                                    <td className="px-5 py-3 border-r whitespace-nowrap">{bill.clientName}</td>
-                                    <td className="px-5 py-3 border-r whitespace-nowrap">{bill.assignedStaff}</td>
-                                    <td className="px-5 py-3 border-r whitespace-nowrap max-w-xs truncate" title={bill.services}>
-                                        {bill.services}
+                                    {/* Capitalized Client Name, Staff Name, and Services; applied text-center */}
+                                    <td className="px-5 py-3 border-r whitespace-nowrap text-center">{capitalizeFirstLetter(bill.clientName)}</td>
+                                    <td className="px-5 py-3 border-r whitespace-nowrap text-center">{capitalizeFirstLetter(bill.assignedStaff)}</td>
+                                    <td className="px-5 py-3 border-r whitespace-nowrap max-w-xs truncate text-center" title={bill.services}>
+                                        {capitalizeFirstLetter(bill.services)}
                                     </td>
-                                    <td className="px-5 py-3 border-r whitespace-nowrap">{bill.totalSessions}</td>
-                                    <td className="px-5 py-3 border-r whitespace-nowrap">{bill.sessionsCompleted}</td>
-                                    <td className="px-5 py-3 border-r whitespace-nowrap">{formatCurrency(bill.cost)}</td>
-                                    <td className="px-5 py-3 border-r whitespace-nowrap">
+                                    <td className="px-5 py-3 border-r whitespace-nowrap text-center">{bill.totalSessions}</td>
+                                    <td className="px-5 py-3 border-r whitespace-nowrap text-center">{bill.sessionsCompleted}</td>
+                                    <td className="px-5 py-3 border-r whitespace-nowrap text-center">{formatCurrency(bill.cost)}</td>
+                                    <td className="px-5 py-3 border-r whitespace-nowrap text-center">
                                         {formatCurrency(bill.totalAmount)}
                                     </td>
-                                    <td className="px-5 py-3 border-r whitespace-nowrap">{formatCurrency(bill.amountPaid)}</td>
-                                    <td className="px-5 py-3 border-r whitespace-nowrap">{formatCurrency(bill.pendingAmount)}</td>
-                                    <td className="px-5 py-3 border-r whitespace-nowrap">{bill.date?.split('T')[0]}</td>
-                                    <td className="px-5 py-3 border-r whitespace-nowrap">{bill.paymentMethod || '-'}</td>
-                                    <td className="px-5 py-3 border-r whitespace-nowrap max-w-xs truncate" title={bill.notes}>
+                                    <td className="px-5 py-3 border-r whitespace-nowrap text-center">{formatCurrency(bill.amountPaid)}</td>
+                                    <td className="px-5 py-3 border-r whitespace-nowrap text-center">{formatCurrency(bill.pendingAmount)}</td>
+                                    <td className="px-5 py-3 border-r whitespace-nowrap text-center">{bill.date?.split('T')[0]}</td>
+                                    <td className="px-5 py-3 border-r whitespace-nowrap text-center">{bill.paymentMethod || '-'}</td>
+                                    <td className="px-5 py-3 border-r whitespace-nowrap max-w-xs truncate text-center" title={bill.notes}>
                                         {bill.notes || '-'}
                                     </td>
-                                    <td className="px-5 py-3 whitespace-nowrap flex gap-3">
+                                    <td className="px-5 py-3 whitespace-nowrap flex gap-3 justify-center items-center"> {/* Centered buttons */}
                                         <button
                                             onClick={() => handleEdit(bill._id)}
                                             className="px-4 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"

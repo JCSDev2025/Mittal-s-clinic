@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { ToastContainer, toast } from 'react-toastify';
-// Removed: import 'react-toastify/dist/ReactToastify.css'; // Removed to prevent compilation errors
+import { toast, ToastContainer } from 'react-toastify';
 import { PencilSquareIcon, TrashIcon, UserGroupIcon } from '@heroicons/react/24/outline'; // Import Heroicons
 
 const Staff = () => {
@@ -23,6 +22,12 @@ const Staff = () => {
 
   // Validation errors object
   const [errors, setErrors] = useState({});
+
+  // Helper to capitalize the first letter of a string
+  const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
 
   useEffect(() => {
     fetchStaff();
@@ -236,7 +241,7 @@ const Staff = () => {
             onClick={() => window.location.assign('/stafftargets')}
             className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-all"
           >
-            View Targets
+            Assign and Edit Targets
           </button>
         </div>
 
@@ -244,8 +249,9 @@ const Staff = () => {
           <table className="w-full min-w-[1100px] bg-white text-sm text-left">
             <thead className="bg-indigo-700 text-white">
               <tr>
+                {/* Applied text-center to all table headers */}
                 {['S.No', 'Name', 'Role', 'Phone', 'Experience', 'Qualification', 'Salary (₹)', 'Actions'].map((head, i) => (
-                  <th key={i} className="py-3 px-4 border-r border-indigo-600">
+                  <th key={i} className="py-3 px-4 border-r border-indigo-600 text-center">
                     {head}
                   </th>
                 ))}
@@ -272,15 +278,16 @@ const Staff = () => {
                       idx % 2 === 0 ? 'bg-indigo-50' : 'bg-white'
                     } hover:bg-indigo-100`}
                   >
-                    <td className="py-3 px-4 border-r">{startIdx + idx + 1}</td>
-                    <td className="py-3 px-4 border-r capitalize">{staff.name}</td>
-                    <td className="py-3 px-4 border-r capitalize">{staff.role}</td>
-                    <td className="py-3 px-4 border-r">{formatMobile(staff.phone)}</td>
-                    <td className="py-3 px-4 border-r">{staff.experience} years</td>
-                    <td className="py-3 px-4 border-r capitalize">{staff.qualification}</td>
-                    <td className="py-3 px-4 border-r">₹{staff.salary}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex flex-col sm:flex-row gap-2">
+                    <td className="py-3 px-4 border-r text-center">{startIdx + idx + 1}</td>
+                    {/* Capitalized Name and Role, applied text-center */}
+                    <td className="py-3 px-4 border-r text-center">{capitalizeFirstLetter(staff.name)}</td>
+                    <td className="py-3 px-4 border-r text-center">{capitalizeFirstLetter(staff.role)}</td>
+                    <td className="py-3 px-4 border-r text-center">{formatMobile(staff.phone)}</td>
+                    <td className="py-3 px-4 border-r text-center">{staff.experience} years</td>
+                    <td className="py-3 px-4 border-r text-center">{capitalizeFirstLetter(staff.qualification)}</td>
+                    <td className="py-3 px-4 border-r text-center">₹{staff.salary}</td>
+                    <td className="py-3 px-4 text-center"> {/* Applied text-center to the Actions cell */}
+                      <div className="flex flex-col sm:flex-row gap-2 justify-center items-center">
                         <button
                           onClick={() => handleEdit(staff)}
                           className="bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-1 rounded-md shadow-sm flex items-center gap-1 justify-center"

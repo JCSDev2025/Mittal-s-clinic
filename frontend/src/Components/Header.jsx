@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiLogOut, FiMenu } from 'react-icons/fi'; // Using Feather Icons
-import JCSGr from "../assets/JCS1.jpg"; // Assuming these paths are correct
+import JCSGr from "../assets/JCS2.png"; // Assuming these paths are correct
 import MittalLogo from "../assets/Logo.webp"; // Assuming these paths are correct
 
 const taglines = [
@@ -19,7 +19,7 @@ const Header = ({ setIsAuthenticated }) => {
   const [fade, setFade] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = () => { 
     localStorage.removeItem('isAuthenticated');
     setIsAuthenticated(false);
     navigate('/');
@@ -86,11 +86,11 @@ const Header = ({ setIsAuthenticated }) => {
               <FiLogOut className="mr-2 h-5 w-5 group-hover:rotate-6 transition-transform" /> {/* Icon animation on hover */}
               Logout
             </button>
-            <div className="bg-slate-800 p-0.5 rounded-full shadow-md flex items-center justify-center border-2 border-indigo-500"> {/* Added border */}
+            <div className="bg-white p-1.5 rounded-full shadow-md flex items-center justify-center border-2 border-indigo-500"> {/* Added border */}
               <img
                 src={JCSGr}
                 alt="JCS Group Logo"
-                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover" // Slightly larger logos
+                className="w-10 h-10 sm:w-14 sm:h-14 rounded-full object-cover" // Slightly larger logos
               />
             </div>
           </div>

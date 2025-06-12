@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
-// Removed: import 'react-toastify/dist/ReactToastify.css'; // This line caused the compilation error
 
 const Doctors = () => {
   const [doctors, setDoctors] = useState([]);
@@ -19,6 +18,12 @@ const Doctors = () => {
 
   // Validation errors object
   const [errors, setErrors] = useState({});
+
+  // Helper to capitalize the first letter of a string
+  const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
 
   useEffect(() => {
     fetchDoctors();
@@ -183,7 +188,7 @@ const Doctors = () => {
   const currentDoctors = filteredDoctors.slice(startIdx, startIdx + doctorsPerPage);
 
   const goToPage = (page) => {
-    if (page >= 1 && page && page <= totalPages) setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
   return (
@@ -205,7 +210,7 @@ const Doctors = () => {
           <div className="relative flex items-center group w-full sm:w-1/3">
             <input
               type="text"
-              placeholder="Search doctors by name"
+              placeholder="Search doctors by name or qualification..."
               className="w-full pl-10 pr-10 py-2 border border-indigo-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-indigo-800 transition-all duration-200"
               value={searchTerm}
               onChange={(e) => {
@@ -237,7 +242,7 @@ const Doctors = () => {
             onClick={() => window.location.assign('/targets')}
             className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-all"
           >
-            View Targets
+            Assign and Edit Targets
           </button>
         </div>
 
@@ -246,16 +251,16 @@ const Doctors = () => {
           <table className="w-full min-w-[1100px] bg-white text-sm text-left">
             <thead className="bg-indigo-700 text-white">
               <tr>
-                <th className="py-3 px-4 border-r border-indigo-600">S.No</th>
-                <th className="py-3 px-4 border-r border-indigo-600">Name</th>
-                <th className="py-3 px-4 border-r border-indigo-600">Specialty</th>
-                <th className="py-3 px-4 border-r border-indigo-600">Email</th>
-                <th className="py-3 px-4 border-r border-indigo-600">Phone</th>
-                <th className="py-3 px-4 border-r border-indigo-600">Experience</th>
-                <th className="py-3 px-4 border-r border-indigo-600">Qualification</th>
-                <th className="py-3 px-4 border-r border-indigo-600">Salary (₹)</th>
-                <th className="py-3 px-4 border-r border-indigo-600">Availability</th>
-                <th className="py-3 px-4">Actions</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">S.No</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">Name</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">Specialty</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">Email</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">Phone</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">Experience</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">Qualification</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">Salary (₹)</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">Availability</th>
+                <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -267,17 +272,17 @@ const Doctors = () => {
                       idx % 2 === 0 ? 'bg-indigo-50' : 'bg-white'
                     } hover:bg-indigo-100`}
                   >
-                    <td className="py-3 px-4 border-r">{startIdx + idx + 1}</td>
-                    <td className="py-3 px-4 border-r">{doctor.name}</td>
-                    <td className="py-3 px-4 border-r">{doctor.specialty}</td>
-                    <td className="py-3 px-4 border-r">{doctor.email}</td>
-                    <td className="py-3 px-4 border-r">{doctor.phone}</td>
-                    <td className="py-3 px-4 border-r">{doctor.experience}</td>
-                    <td className="py-3 px-4 border-r">{doctor.qualification}</td>
-                    <td className="py-3 px-4 border-r">₹{doctor.salary}</td>
-                    <td className="py-3 px-4 border-r">{doctor.availability}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex flex-col sm:flex-row gap-2">
+                    <td className="py-3 px-4 border-r text-center">{startIdx + idx + 1}</td>
+                    <td className="py-3 px-4 border-r text-center">{capitalizeFirstLetter(doctor.name)}</td>
+                    <td className="py-3 px-4 border-r text-center">{capitalizeFirstLetter(doctor.specialty)}</td>
+                    <td className="py-3 px-4 border-r text-center">{doctor.email}</td>
+                    <td className="py-3 px-4 border-r text-center">{doctor.phone}</td>
+                    <td className="py-3 px-4 border-r text-center">{doctor.experience}</td>
+                    <td className="py-3 px-4 border-r text-center">{doctor.qualification}</td>
+                    <td className="py-3 px-4 border-r text-center">₹{doctor.salary}</td>
+                    <td className="py-3 px-4 border-r text-center">{doctor.availability}</td>
+                    <td className="py-3 px-4 text-center">
+                      <div className="flex flex-col sm:flex-row gap-2 justify-center items-center">
                         <button
                           onClick={() => handleEdit(doctor)}
                           className="bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-1 rounded-md shadow-sm"

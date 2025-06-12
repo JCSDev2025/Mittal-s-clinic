@@ -10,6 +10,11 @@ const staffTargetSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  targetType: {
+    type: String,
+    enum: ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly'],
+    required: true,
+  },
 }, { timestamps: true });
 
 export default mongoose.model('StaffTarget', staffTargetSchema);

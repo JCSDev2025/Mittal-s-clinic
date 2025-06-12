@@ -21,6 +21,12 @@ const Services = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [serviceToDeleteId, setServiceToDeleteId] = useState(null);
 
+  // Helper to capitalize the first letter of a string
+  const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
+
   useEffect(() => {
     const fetchServices = async () => {
       try {
@@ -205,13 +211,14 @@ const Services = () => {
           <table className="w-full min-w-[1100px] bg-white text-sm text-left">
             <thead className="bg-indigo-700 text-white">
               <tr>
-                <th className="py-3 px-4 border-r border-indigo-600">S.No</th>
-                <th className="py-3 px-4 border-r border-indigo-600">Name</th>
-                <th className="py-3 px-4 border-r border-indigo-600">Category</th>
-                <th className="py-3 px-4 border-r border-indigo-600">Description</th>
-                <th className="py-3 px-4 border-r border-indigo-600 text-right">Price (₹)</th>
+                {/* Applied text-center to all table headers except price, which is right-aligned */}
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">S.No</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">Name</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">Category</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">Description</th>
+                <th className="py-3 px-4 border-r border-indigo-600 text-center">Price (₹)</th>
                 <th className="py-3 px-4 border-r border-indigo-600 text-center">Sessions</th>
-                <th className="py-3 px-4">Actions</th>
+                <th className="py-3 px-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -223,14 +230,15 @@ const Services = () => {
                       idx % 2 === 0 ? 'bg-indigo-50' : 'bg-white'
                     } hover:bg-indigo-100`}
                   >
-                    <td className="py-3 px-4 border-r">{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
-                    <td className="py-3 px-4 border-r capitalize">{service.name}</td>
-                    <td className="py-3 px-4 border-r capitalize">{service.category}</td>
-                    <td className="py-3 px-4 border-r truncate max-w-[200px]">{service.description}</td>
-                    <td className="py-3 px-4 border-r text-right">₹{Number(service.price).toLocaleString('en-IN')}</td>
+                    <td className="py-3 px-4 border-r text-center">{(currentPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
+                    {/* Capitalized Name and Category, applied text-center */}
+                    <td className="py-3 px-4 border-r text-center">{capitalizeFirstLetter(service.name)}</td>
+                    <td className="py-3 px-4 border-r text-center">{capitalizeFirstLetter(service.category)}</td>
+                    <td className="py-3 px-4 border-r truncate max-w-[200px] text-center">{service.description}</td>
+                    <td className="py-3 px-4 border-r text-center">₹{Number(service.price).toLocaleString('en-IN')}</td>
                     <td className="py-3 px-4 border-r text-center">{service.sessions}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex flex-col sm:flex-row gap-2">
+                    <td className="py-3 px-4 text-center"> {/* Applied text-center to the Actions cell */}
+                      <div className="flex flex-col sm:flex-row gap-2 justify-center items-center">
                         <button
                           onClick={() => handleEdit(service)}
                           className="bg-yellow-400 hover:bg-yellow-500 text-white px-4 py-1 rounded-md shadow-sm flex items-center gap-1 justify-center"
