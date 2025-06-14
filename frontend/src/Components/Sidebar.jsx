@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  FiMenu,         // Still using Feather icon for the toggle button
+  FiMenu,        // Still using Feather icon for the toggle button
 } from 'react-icons/fi';
 
 const Sidebar = () => {
@@ -22,18 +22,18 @@ const Sidebar = () => {
 
   return (
     <div
-      className={`bg-slate-900 text-slate-300 shadow-xl transition-all duration-300 relative z-40 flex flex-col min-h-screen ${
+      className={`bg-white text-gray-700 shadow-xl transition-all duration-300 relative z-40 flex flex-col min-h-screen ${
         isOpen ? 'w-64' : 'w-20'
-      } border-r border-slate-800`}
+      } border-r border-gray-200`}
     >
       {/* Toggle Button */}
       <div className={`flex ${isOpen ? 'justify-end pr-5' : 'justify-center'} items-center pt-5 pb-4 h-16`}>
         <button
           onClick={toggleSidebar}
-          className="text-slate-400 hover:text-white transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-md"
+          className="text-gray-500 hover:text-blue-700 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md"
           aria-label="Toggle Sidebar"
         >
-          <FiMenu size={isOpen ? 26 : 22} /> {/* Still using Feather icon for menu toggle */}
+          <FiMenu size={isOpen ? 26 : 22} />
         </button>
       </div>
 
@@ -54,19 +54,17 @@ const SidebarNavItem = ({ icon, label, path, isOpen }) => (
       `flex items-center rounded-lg transition-all duration-200 font-medium whitespace-nowrap overflow-hidden
       ${
         isActive
-          ? 'bg-indigo-700 text-white shadow-lg'
-          : 'text-slate-300 hover:bg-slate-700 hover:text-indigo-300'
+          ? 'bg-blue-600 text-white shadow-lg' // Active state: vibrant blue background, white text
+          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700' // Inactive state: gray text, light blue background on hover
       }
       ${
         isOpen
           ? 'px-4 py-3 space-x-4'
           : 'justify-center py-3' // Consistent padding and centering for closed state
-      }`
-    }
+      }`}
     title={label}
   >
-    {/* The emoji icon is now rendered directly within the span */}
-    <span className={`flex-shrink-0 ${isOpen ? 'text-xl' : 'text-2xl'}`}> {/* Adjusted text size for emojis */}
+    <span className={`flex-shrink-0 ${isOpen ? 'text-xl' : 'text-2xl'}`}>
       {icon}
     </span>
     {isOpen && <span className="flex-grow text-sm">{label}</span>}

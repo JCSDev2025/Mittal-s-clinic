@@ -11,18 +11,12 @@ const AddDoctor = ({ doctors, setDoctors }) => {
     experience: '',
     qualification: '',
     availability: '',
-    salary: '',
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const navigate = useNavigate();
-
-  // Directly defining the API base URL to resolve compilation issues in this Canvas environment.
-  // In a real Vite project, you would use:
-  
-
 
   const validateField = (name, value) => {
     switch (name) {
@@ -41,8 +35,7 @@ const AddDoctor = ({ doctors, setDoctors }) => {
         if (!/^\+91\d{10}$/.test(value)) return 'Phone must be 10 digits after +91';
         break;
       case 'experience':
-      case 'salary':
-        if (!value) return `${name[0].toUpperCase() + name.slice(1)} is required`;
+        if (!value) return `Experience is required`;
         if (isNaN(value) || Number(value) < 0) return 'Only positive numbers allowed';
         break;
       case 'availability':
@@ -84,9 +77,8 @@ const AddDoctor = ({ doctors, setDoctors }) => {
       }
     }
 
-
-    // Numeric only for experience and salary
-    if ((name === 'experience' || name === 'salary') && !/^\d*$/.test(newValue)) return;
+    // Numeric only for experience
+    if (name === 'experience' && !/^\d*$/.test(newValue)) return;
 
     // Availability validation
     if (name === 'availability' && newValue && !/^\d{0,2}-?\d{0,2}$/.test(newValue)) return;
@@ -108,11 +100,9 @@ const AddDoctor = ({ doctors, setDoctors }) => {
     const dataToSend = {
       ...formData,
       experience: Number(formData.experience),
-      salary: Number(formData.salary),
     };
 
     try {
-      // Use the hardcoded API URL
       const response = await axios.post('/api/doctors', dataToSend);
       setDoctors([...doctors, response.data]);
       navigate('/doctors');
@@ -145,7 +135,6 @@ const AddDoctor = ({ doctors, setDoctors }) => {
             { label: 'Phone (+91)', name: 'phone', type: 'text' },
             { label: 'Experience (years)', name: 'experience', type: 'text' },
             { label: 'Qualification', name: 'qualification', type: 'text' },
-            { label: 'Salary (₹)', name: 'salary', type: 'text' },
           ].map(({ label, name, type }) => (
             <div key={name}>
               <label className="block text-sm font-medium text-gray-700">{label}</label>

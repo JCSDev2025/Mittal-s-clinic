@@ -421,7 +421,9 @@ const AddBilling = () => {
                             <option value="Cash">Cash</option>
                             <option value="Card">Card</option>
                             <option value="UPI">UPI</option>
-                            <option value="Insurance">Insurance</option>
+                            <option value="Insurance">Bajaj Finanace 10/2</option>
+                            <option value="Insurance">Bajaj Finanace 8/0</option>
+                            <option value="Insurance">Bajaj Finanace 12/4</option>
                         </select>
                     </div>
 

@@ -15,14 +15,14 @@ router.get('/', async (req, res) => {
 
 // POST new staff member
 router.post('/', async (req, res) => {
-  const { name, role, phone, experience, qualification, salary } = req.body;
+  const { name, role, phone, experience, qualification } = req.body; // Removed salary
 
-  if (!name || !role || !phone || experience == null || !qualification || salary == null) {
+  if (!name || !role || !phone || experience == null || !qualification) { // Removed salary from validation
     return res.status(400).json({ error: 'All fields are required' });
   }
 
   try {
-    const newStaff = new Staff({ name, role, phone, experience, qualification, salary });
+    const newStaff = new Staff({ name, role, phone, experience, qualification }); // Removed salary
     const savedStaff = await newStaff.save();
     res.status(201).json(savedStaff);
   } catch (error) {
@@ -33,12 +33,12 @@ router.post('/', async (req, res) => {
 // PUT update staff member
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, role, phone, experience, qualification, salary } = req.body;
+  const { name, role, phone, experience, qualification } = req.body; // Removed salary
 
   try {
     const updated = await Staff.findByIdAndUpdate(
       id,
-      { name, role, phone, experience, qualification, salary },
+      { name, role, phone, experience, qualification }, // Removed salary
       { new: true }
     );
     if (!updated) return res.status(404).json({ error: 'Staff not found' });

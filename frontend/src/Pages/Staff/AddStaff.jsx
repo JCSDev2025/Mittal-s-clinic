@@ -9,14 +9,12 @@ const AddStaff = () => {
     phone: '+91',
     experience: '',
     qualification: '',
-    salary: '',
+    // salary: '', // Removed salary from formData
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,13 +36,13 @@ const AddStaff = () => {
 
     if (name === 'experience' && !/^\d*$/.test(value)) return;
     if (name === 'qualification' && !/^[a-zA-Z.\s]*$/.test(value)) return;
-    if (name === 'salary' && !/^\d*$/.test(value)) return;
+    // if (name === 'salary' && !/^\d*$/.test(value)) return; // Removed salary validation
 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const validateForm = () => {
-    const { name, role, phone, experience, qualification, salary } = formData;
+    const { name, role, phone, experience, qualification } = formData; // Removed salary from destructuring
     let isValid = true;
     let newError = null; // Use a single error message for simplicity as per original code
 
@@ -63,10 +61,11 @@ const AddStaff = () => {
     } else if (!/^[a-zA-Z.\s]+$/.test(qualification)) {
       newError = 'Qualification should contain only alphabets, dot (.) and spaces';
       isValid = false;
-    } else if (isNaN(Number(salary)) || Number(salary) <= 0) { // More robust check for positive number
-      newError = 'Salary must be a positive number';
-      isValid = false;
     }
+    // else if (isNaN(Number(salary)) || Number(salary) <= 0) { // Removed salary validation
+    //   newError = 'Salary must be a positive number';
+    //   isValid = false;
+    // }
 
     setError(newError);
     return isValid;
@@ -83,7 +82,7 @@ const AddStaff = () => {
     const dataToSend = {
       ...formData,
       experience: Number(formData.experience),
-      salary: Number(formData.salary),
+      // salary: Number(formData.salary), // Removed salary from dataToSend
     };
 
     try {
@@ -176,7 +175,8 @@ const AddStaff = () => {
             />
           </div>
 
-          <div>
+          {/* Removed Salary field */}
+          {/* <div>
             <label className="block text-sm font-medium text-gray-700">Salary (₹)</label>
             <input
               type="text"
@@ -187,7 +187,7 @@ const AddStaff = () => {
               placeholder="e.g., 30000"
               className="mt-1 w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-indigo-400"
             />
-          </div>
+          </div> */}
         </div>
 
         <div className="flex justify-end gap-4 pt-4">

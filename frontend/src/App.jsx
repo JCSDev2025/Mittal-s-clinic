@@ -21,6 +21,7 @@ import Staff from './Pages/Staff/Staff';
 import AddStaff from './Pages/Staff/AddStaff';
 import InvoicePage from './Pages/InvoicePage';
 import StaffTargets from './Pages/Staff/StaffTargets';
+import AssignTargetModal from './Pages/AssignTargetModal'; // Make sure this import is correct
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -58,6 +59,8 @@ function App() {
           <Route path="reports" element={<Reports />} />
           <Route path="/invoice/:id" element={<InvoicePage />} />
           <Route path="/stafftargets" element={<StaffTargets />} />
+          {/* New route for Branch Targets */}
+          <Route path="/branchtargets" element={<AssignTargetModal onClose={() => {}} onTargetAssigned={() => {}} />} />
         </Route>
       )}
     </Routes>

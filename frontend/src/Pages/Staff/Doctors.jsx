@@ -103,12 +103,6 @@ const Doctors = () => {
         }
         break;
 
-      case 'salary':
-        if (!/^\d+$/.test(value) || Number(value) <= 0) {
-          return 'Enter a valid positive salary';
-        }
-        break;
-
       case 'availability':
         if (!/^\d{1,2}-\d{1,2}$/.test(value)) {
           return 'Availability must be in format "9-5", "10-6" etc.';
@@ -131,6 +125,8 @@ const Doctors = () => {
   const validateAllFields = (data) => {
     const newErrors = {};
     Object.entries(data).forEach(([key, val]) => {
+      // Skip 'salary' in validation
+      if (key === 'salary') return;
       const errorMsg = validateField(key, val);
       if (errorMsg) newErrors[key] = errorMsg;
     });
@@ -153,7 +149,11 @@ const Doctors = () => {
     e.preventDefault();
     if (!editingDoctor) return;
 
-    const validationErrors = validateAllFields(editingDoctor);
+    // Create a copy of editingDoctor and remove the salary field before validation
+    const doctorDataToValidate = { ...editingDoctor };
+    delete doctorDataToValidate.salary;
+
+    const validationErrors = validateAllFields(doctorDataToValidate);
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) {
@@ -162,7 +162,11 @@ const Doctors = () => {
     }
 
     try {
-      const response = await axios.put(`/api/doctors/${editingDoctor._id}`, editingDoctor);
+      // Create a copy of editingDoctor and remove the salary field before sending to API
+      const doctorDataToSend = { ...editingDoctor };
+      delete doctorDataToSend.salary;
+
+      const response = await axios.put(`/api/doctors/${editingDoctor._id}`, doctorDataToSend);
       const updatedDoctors = doctors.map((doc) =>
         doc._id === editingDoctor._id ? response.data : doc
       );
@@ -258,7 +262,6 @@ const Doctors = () => {
                 <th className="py-3 px-4 border-r border-indigo-600 text-center">Phone</th>
                 <th className="py-3 px-4 border-r border-indigo-600 text-center">Experience</th>
                 <th className="py-3 px-4 border-r border-indigo-600 text-center">Qualification</th>
-                <th className="py-3 px-4 border-r border-indigo-600 text-center">Salary (₹)</th>
                 <th className="py-3 px-4 border-r border-indigo-600 text-center">Availability</th>
                 <th className="py-3 px-4 text-center">Actions</th>
               </tr>
@@ -279,7 +282,6 @@ const Doctors = () => {
                     <td className="py-3 px-4 border-r text-center">{doctor.phone}</td>
                     <td className="py-3 px-4 border-r text-center">{doctor.experience}</td>
                     <td className="py-3 px-4 border-r text-center">{doctor.qualification}</td>
-                    <td className="py-3 px-4 border-r text-center">₹{doctor.salary}</td>
                     <td className="py-3 px-4 border-r text-center">{doctor.availability}</td>
                     <td className="py-3 px-4 text-center">
                       <div className="flex flex-col sm:flex-row gap-2 justify-center items-center">
@@ -301,7 +303,7 @@ const Doctors = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="10" className="text-center py-6 text-gray-500">
+                  <td colSpan="9" className="text-center py-6 text-gray-500">
                     No doctors available or matches your search.
                   </td>
                 </tr>
@@ -461,25 +463,6 @@ const Doctors = () => {
                   />
                   {errors.qualification && (
                     <p className="text-red-600 text-xs mt-1">{errors.qualification}</p>
-                  )}
-                </div>
-
-                {/** Salary */}
-                <div>
-                  <input
-                    type="number"
-                    name="salary"
-                    value={editingDoctor.salary || ''}
-                    onChange={handleInputChange}
-                    required
-                    min={1}
-                    placeholder="Salary (₹)"
-                    className={`px-4 py-2 border rounded-md w-full ${
-                      errors.salary ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.salary && (
-                    <p className="text-red-600 text-xs mt-1">{errors.salary}</p>
                   )}
                 </div>
 

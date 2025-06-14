@@ -8,8 +8,7 @@ const doctorSchema = new mongoose.Schema({
   experience: { type: Number, required: true, min: 0 },
   qualification: { type: String, required: true, trim: true },
   availability: { type: String, required: true, trim: true },
-  salary: { type: Number, required: true, min: 0 },
-}, { timestamps: true });
+}, { timestamps: true }); // Removed salary field
 
 const Doctor = mongoose.model('Doctor', doctorSchema);
 

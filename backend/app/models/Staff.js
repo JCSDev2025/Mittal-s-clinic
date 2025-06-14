@@ -22,12 +22,7 @@ const staffSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  salary: {
-    type: Number,
-    required: true,
-    min: 0,
-  },
-}, { timestamps: true });
+}, { timestamps: true }); // Removed salary field
 
 const Staff = mongoose.model('Staff', staffSchema);
 export default Staff;

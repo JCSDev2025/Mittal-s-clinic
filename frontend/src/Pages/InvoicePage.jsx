@@ -162,6 +162,10 @@ const InvoicePage = () => {
 
         {/* Footer Notes */}
         <div className="absolute bottom-16 left-12 right-12">
+          <div className="text-xs text-gray-600 mb-4">
+            <p className="font-semibold">Important Note:</p>
+            <p>Payments made for services are non-refundable. By proceeding with the services, you acknowledge and agree to this policy.</p>
+          </div>
           <div className="flex justify-between items-end">
             <div className="text-xs text-gray-600">
               <p className="font-semibold">Notes:</p>

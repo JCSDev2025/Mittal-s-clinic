@@ -80,9 +80,8 @@ const Staff = () => {
         break;
 
       case 'experience':
-      case 'salary':
         if (!/^\d+$/.test(value) || Number(value) <= 0) {
-          return `Enter a valid positive ${name}`;
+          return `Enter a valid positive experience`;
         }
         break;
 
@@ -95,6 +94,8 @@ const Staff = () => {
   const validateAllFields = (data) => {
     const newErrors = {};
     Object.entries(data).forEach(([key, val]) => {
+      // Skip salary validation as it's no longer a field
+      if (key === 'salary') return;
       const errorMsg = validateField(key, val);
       if (errorMsg) newErrors[key] = errorMsg;
     });
@@ -117,7 +118,11 @@ const Staff = () => {
     e.preventDefault();
     if (!editingStaff) return;
 
-    const validationErrors = validateAllFields(editingStaff);
+    // Create a copy of editingStaff and remove the salary field before validation and sending
+    const staffDataToProcess = { ...editingStaff };
+    delete staffDataToProcess.salary;
+
+    const validationErrors = validateAllFields(staffDataToProcess);
     setErrors(validationErrors);
 
     if (Object.keys(validationErrors).length > 0) {
@@ -127,7 +132,7 @@ const Staff = () => {
 
     try {
       // Changed to relative URL /api/staff/
-      const res = await axios.put(`/api/staff/${editingStaff._id}`, editingStaff);
+      const res = await axios.put(`/api/staff/${editingStaff._id}`, staffDataToProcess);
       setStaffList((prev) =>
         prev.map((staff) => (staff._id === editingStaff._id ? res.data : staff))
       );
@@ -185,10 +190,6 @@ const Staff = () => {
   const totalPages = Math.ceil(filteredStaff.length / staffPerPage);
   const startIdx = (currentPage - 1) * staffPerPage;
   const currentStaff = filteredStaff.slice(startIdx, startIdx + staffPerPage);
-
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 to-blue-50 p-6 sm:p-10">
@@ -250,7 +251,7 @@ const Staff = () => {
             <thead className="bg-indigo-700 text-white">
               <tr>
                 {/* Applied text-center to all table headers */}
-                {['S.No', 'Name', 'Role', 'Phone', 'Experience', 'Qualification', 'Salary (₹)', 'Actions'].map((head, i) => (
+                {['S.No', 'Name', 'Role', 'Phone', 'Experience', 'Qualification', 'Actions'].map((head, i) => (
                   <th key={i} className="py-3 px-4 border-r border-indigo-600 text-center">
                     {head}
                   </th>
@@ -260,13 +261,13 @@ const Staff = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-10 text-gray-500">
+                  <td colSpan="7" className="text-center py-10 text-gray-500">
                     Loading staff data...
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-10 text-red-600">
+                  <td colSpan="7" className="text-center py-10 text-red-600">
                     {error}
                   </td>
                 </tr>
@@ -285,7 +286,6 @@ const Staff = () => {
                     <td className="py-3 px-4 border-r text-center">{formatMobile(staff.phone)}</td>
                     <td className="py-3 px-4 border-r text-center">{staff.experience} years</td>
                     <td className="py-3 px-4 border-r text-center">{capitalizeFirstLetter(staff.qualification)}</td>
-                    <td className="py-3 px-4 border-r text-center">₹{staff.salary}</td>
                     <td className="py-3 px-4 text-center"> {/* Applied text-center to the Actions cell */}
                       <div className="flex flex-col sm:flex-row gap-2 justify-center items-center">
                         <button
@@ -306,7 +306,7 @@ const Staff = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="text-center py-6 text-gray-500">
+                  <td colSpan="7" className="text-center py-6 text-gray-500">
                     <div className="flex flex-col items-center">
                       <UserGroupIcon className="h-10 w-10 mb-2 text-indigo-400" />
                       No staff members found or matches your search.
@@ -458,25 +458,6 @@ const Staff = () => {
                   />
                   {errors.qualification && (
                     <p className="text-red-600 text-xs mt-1">{errors.qualification}</p>
-                  )}
-                </div>
-
-                {/** Salary */}
-                <div>
-                  <input
-                    type="number"
-                    name="salary"
-                    value={editingStaff.salary || ''}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Salary"
-                    className={`px-4 py-2 border rounded-md w-full ${
-                      errors.salary ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    min={1}
-                  />
-                  {errors.salary && (
-                    <p className="text-red-600 text-xs mt-1">{errors.salary}</p>
                   )}
                 </div>
               </div>

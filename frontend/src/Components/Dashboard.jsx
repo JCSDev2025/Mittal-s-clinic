@@ -1,265 +1,269 @@
 import React, { useState, useEffect } from 'react';
-// Removed react-icons imports due to compilation issues in this environment
-// import { FaUserMd, FaFileInvoiceDollar } from 'react-icons/fa';
-// import { MdPending } from 'react-icons/md';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  LineElement,
-  PointElement,
-  CategoryScale,
-  LinearScale,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
 import axios from 'axios';
 import dayjs from 'dayjs';
-import isoWeek from 'dayjs/plugin/isoWeek';
-import isBetween from 'dayjs/plugin/isBetween';
-
-
-dayjs.extend(isoWeek);
-dayjs.extend(isBetween);
-
-ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Title, Tooltip, Legend);
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Dashboard = () => {
-  const [selectedRange, setSelectedRange] = useState('This Month');
-  const [revenue, setRevenue] = useState(0);
-  const [pendingAmount, setPendingAmount] = useState(0);
-  const [totalDoctors, setTotalDoctors] = useState(0);
-  const [bills, setBills] = useState([]);
+    const [totalSales, setTotalSales] = useState(0);
+    const [pendingAmount, setPendingAmount] = useState(0);
+    const [dailySale, setDailySale] = useState(0);
+    const [branchTarget, setBranchTarget] = useState(0); 
+    const [staffPerformance, setStaffPerformance] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [allStaffList, setAllStaffList] = useState([]);
 
-  // Directly defining the API base URL to resolve compilation issues in this Canvas environment.
-  // In a real Vite project, you would typically use:
+    const inrFormatter = new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0,
+    });
 
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [billsRes, doctorsRes] = await Promise.all([
-          axios.get('/api/bills'),
-          axios.get('/api/doctors')
-        ]);
-
-        const billsData = billsRes.data;
-        const doctorsData = doctorsRes.data;
-
-        const totalRevenue = billsData.reduce((sum, bill) => sum + (bill.amountPaid || 0), 0);
-        const totalPending = billsData.reduce((sum, bill) => sum + ((bill.totalAmount || 0) - (bill.amountPaid || 0)), 0);
-
-        setRevenue(totalRevenue);
-        setPendingAmount(totalPending);
-        setTotalDoctors(doctorsData.length);
-        setBills(billsData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
+    const capitalizeFirstLetter = (string) => {
+        if (!string) return '';
+        return string.charAt(0).toUpperCase() + string.slice(1);
     };
 
-    fetchData();
-  }, []);
+    const getStaffSummaryForDashboard = (allTargets, allBills, staffListData) => {
+        if (!staffListData.length) return [];
 
-  const getRevenueDataByRange = (bills, range) => {
-    if (!bills.length) return { labels: [], data: [] };
+        const staffSummaryMap = {};
 
-    const today = dayjs();
-    let labels = [], data = [];
+        staffListData.forEach(staff => {
+            staffSummaryMap[staff._id] = {
+                name: capitalizeFirstLetter(staff.name),
+                target: 0,
+                achieved: 0,
+                remaining: 0,
+                role: staff.role,
+            };
+        });
 
-    switch (range) {
-    case 'Today': {
-      labels = Array.from({ length: 24 }, (_, i) => dayjs().hour(i).format('h A'));
-      const hourlyTotals = Array(24).fill(0);
-      bills.forEach(bill => {
-        const billTime = dayjs(bill.createdAt);
-        if (billTime.isSame(today, 'day')) {
-          hourlyTotals[billTime.hour()] += bill.amountPaid || 0;
+        allTargets.forEach(target => {
+            if (target.staffId && staffSummaryMap[target.staffId._id]) {
+                staffSummaryMap[target.staffId._id].target += target.targetAmount;
+            }
+        });
+
+        allBills.forEach(bill => {
+            const staff = staffListData.find(s => s.name === bill.assignedStaff);
+            if (staff && staffSummaryMap[staff._id]) {
+                staffSummaryMap[staff._id].achieved += (bill.amountPaid || 0);
+            }
+        });
+
+        return Object.values(staffSummaryMap).map(staff => ({
+            ...staff,
+            remaining: staff.target - staff.achieved,
+        }));
+    };
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [billsRes, targetsRes, staffRes, branchTargetsRes] = await Promise.all([
+                axios.get('/api/bills'),
+                axios.get('/api/targets/staff'),
+                axios.get('/api/staff'),
+                axios.get('/api/branchtargets'),
+            ]);
+
+            const billsData = billsRes.data;
+            const targetsData = targetsRes.data;
+            const staffListData = staffRes.data;
+            const branchTargetsData = branchTargetsRes.data;
+
+            setAllStaffList(staffListData);
+
+            const calculatedTotalSales = billsData.reduce((sum, bill) => sum + (bill.amountPaid || 0), 0);
+            setTotalSales(calculatedTotalSales);
+
+            const calculatedPendingAmount = billsData.reduce((sum, bill) => sum + ((bill.totalAmount || 0) - (bill.amountPaid || 0)), 0);
+            setPendingAmount(calculatedPendingAmount);
+
+            const today = dayjs();
+            const calculatedDailySale = billsData.reduce((sum, bill) => {
+                const billDate = dayjs(bill.createdAt);
+                if (billDate.isSame(today, 'day')) {
+                    return sum + (bill.amountPaid || 0);
+                }
+                return sum;
+            }, 0);
+            setDailySale(calculatedDailySale);
+
+            if (branchTargetsData && branchTargetsData.length > 0) {
+                setBranchTarget(branchTargetsData[0].amount); 
+            } else {
+                setBranchTarget(0);
+            }
+
+            const staffSummary = getStaffSummaryForDashboard(targetsData, billsData, staffListData);
+            setStaffPerformance(staffSummary);
+
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+            setLoading(false);
+            toast.error('Failed to fetch dashboard data.', { position: 'top-right' });
         }
-      });
-      data = hourlyTotals;
-      break;
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const handleBranchTargetClick = () => {
+        window.location.assign('/branchtargets'); 
+    };
+
+    if (loading) {
+        return (
+            <div className="p-6 min-h-screen bg-gray-50 flex items-center justify-center">
+                <p className="text-xl text-gray-600 animate-pulse">Loading dashboard data...</p>
+            </div>
+        );
     }
 
+    return (
+        <div className="p-6 min-h-screen bg-gray-50">
+            <ToastContainer position="top-right" autoClose={3000} />
+            <h1 className="text-4xl font-extrabold text-gray-800 mb-8 tracking-tight">Clinic Overview</h1>
+            <p className="text-lg text-gray-600 mb-10">A quick glance at your clinic's performance today.</p>
 
-      case 'This Week': {
-        labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        const startOfWeek = today.startOf('isoWeek');
-        const dailyTotals = Array(7).fill(0);
-        bills.forEach(bill => {
-          const billDate = dayjs(bill.createdAt); // Use createdAt for when the bill was recorded
-          if (billDate.isBetween(startOfWeek.subtract(1, 'second'), startOfWeek.add(7, 'day'), null, '[)')) {
-            dailyTotals[billDate.isoWeekday() - 1] += bill.amountPaid || 0;
-          }
-        });
-        data = dailyTotals;
-        break;
-      }
-      case 'This Month': {
-        labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-        const weeklyTotals = Array(4).fill(0);
-        bills.forEach(bill => {
-          const billDate = dayjs(bill.createdAt); // Use createdAt
-          if (billDate.isSame(today, 'month')) {
-            const weekNumber = Math.ceil(billDate.date() / 7);
-            if (weekNumber <= 4) weeklyTotals[weekNumber - 1] += bill.amountPaid || 0;
-          }
-        });
-        data = weeklyTotals;
-        break;
-      }
-      case 'Last Month': {
-        const lastMonth = today.subtract(1, 'month');
-        labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-        const weeklyTotals = Array(4).fill(0);
-        bills.forEach(bill => {
-          const billDate = dayjs(bill.createdAt); // Use createdAt
-          if (billDate.isSame(lastMonth, 'month')) {
-            const weekNumber = Math.ceil(billDate.date() / 7);
-            if (weekNumber <= 4) weeklyTotals[weekNumber - 1] += bill.amountPaid || 0;
-          }
-        });
-        data = weeklyTotals;
-        break;
-      }
-      case 'This Quarter': {
-        const currentQuarter = Math.floor(today.month() / 3);
-        const quarterStart = dayjs().month(currentQuarter * 3).startOf('month');
-        labels = Array.from({ length: 3 }, (_, i) => quarterStart.add(i, 'month').format('MMM'));
-        const monthlyTotals = Array(3).fill(0);
-        bills.forEach(bill => {
-          const billDate = dayjs(bill.createdAt); // Use createdAt
-          if (billDate.isBetween(quarterStart.subtract(1, 'second'), quarterStart.add(3, 'month'), null, '[)')) {
-            monthlyTotals[billDate.month() - quarterStart.month()] += bill.amountPaid || 0;
-          }
-        });
-        data = monthlyTotals;
-        break;
-      }
-      case 'Half Year': {
-        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']; // Assuming the first half of the year
-        const monthlyTotals = Array(6).fill(0);
-        bills.forEach(bill => {
-          const billDate = dayjs(bill.createdAt); // Use createdAt
-          // Check if within the current year and the first 6 months
-          if (billDate.isSame(today, 'year') && billDate.month() < 6) {
-            monthlyTotals[billDate.month()] += bill.amountPaid || 0;
-          }
-        });
-        data = monthlyTotals;
-        break;
-      }
-      case 'This Year': {
-        const monthCount = today.month() + 1;
-        labels = Array.from({ length: monthCount }, (_, i) => dayjs().month(i).format('MMM'));
-        const monthlyTotals = Array(monthCount).fill(0);
-        bills.forEach(bill => {
-          const billDate = dayjs(bill.createdAt); // Use createdAt
-          if (billDate.isSame(today, 'year')) {
-            monthlyTotals[billDate.month()] += bill.amountPaid || 0;
-          }
-        });
-        data = monthlyTotals;
-        break;
-      }
-      default:
-        break;
-    }
+            {/* --- */}
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <DashboardCard
+                    icon={<div className="text-4xl">🎯</div>}
+                    label="Branch Target"
+                    value={inrFormatter.format(branchTarget)}
+                    bgColor="bg-gradient-to-br from-blue-500 to-blue-600"
+                    textColor="text-white"
+                    onClick={handleBranchTargetClick}
+                    isClickable={true} 
+                />
 
-    return { labels, data };
-  };
+                <DashboardCard
+                    icon={<div className="text-4xl">💰</div>}
+                    label="Total Sale"
+                    value={inrFormatter.format(totalSales)}
+                    bgColor="bg-gradient-to-br from-green-500 to-green-600"
+                    textColor="text-white"
+                />
+                <DashboardCard
+                    icon={<div className="text-4xl">📈</div>}
+                    label="Daily Sale"
+                    value={inrFormatter.format(dailySale)}
+                    bgColor="bg-gradient-to-br from-purple-500 to-purple-600"
+                    textColor="text-white"
+                />
+                <DashboardCard
+                    icon={<div className="text-4xl">⏳</div>}
+                    label="Pending Amount"
+                    value={inrFormatter.format(pendingAmount)}
+                    bgColor="bg-gradient-to-br from-orange-500 to-orange-600"
+                    textColor="text-white"
+                />
+            </div>
 
-  const currentData = getRevenueDataByRange(bills, selectedRange);
-
-  const salesData = {
-    labels: currentData.labels,
-    datasets: [
-      {
-        label: 'Revenue (₹)',
-        data: currentData.data,
-        fill: true,
-        borderColor: '#0ea5e9',
-        backgroundColor: 'rgba(14,165,233,0.15)',
-        tension: 0.4,
-        pointRadius: 5,
-        pointBackgroundColor: '#0284c7',
-        pointBorderColor: '#0284c7'
-      }
-    ]
-  };
-
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { labels: { color: '#334155' } },
-      title: {
-        display: true,
-        text: `Revenue Trends (${selectedRange})`,
-        color: '#1e293b',
-        font: { size: 18 }
-      }
-    },
-    scales: {
-      x: {
-        ticks: { color: '#64748b' },
-        grid: { display: false }
-      },
-      y: {
-        beginAtZero: true,
-        ticks: {
-          color: '#64748b',
-          callback: (value) => `₹${value}`
-        },
-        grid: { color: '#e2e8f0' }
-      }
-    }
-  };
-
-  const rangeOptions = ['Today', 'This Week', 'This Month', 'Last Month', 'This Quarter', 'Half Year', 'This Year'];
-
-  return (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <h1 className="text-3xl font-bold text-slate-800 mb-6">Clinic Management Dashboard</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        {/* Replaced FaFileInvoiceDollar with a div for icon */}
-        <DashboardCard icon={<div className="text-4xl">💰</div>} label="Total Revenue" value={`₹${revenue.toLocaleString()}`} bg="bg-yellow-100" text="text-yellow-800" />
-        {/* Replaced FaUserMd with a div for icon */}
-        <DashboardCard icon={<div className="text-4xl">👩‍⚕️</div>} label="Available Doctors" value={totalDoctors} bg="bg-green-100" text="text-green-800" />
-        {/* Replaced MdPending with a div for icon */}
-        <DashboardCard icon={<div className="text-4xl">⏳</div>} label="Pending Amount" value={`₹${pendingAmount.toLocaleString()}`} bg="bg-red-100" text="text-red-800" />
-      </div>
-
-      <div className="bg-white rounded-xl shadow-xl p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-          <h2 className="text-lg font-semibold text-slate-700">Revenue Over Time</h2>
-          <select
-            value={selectedRange}
-            onChange={(e) => setSelectedRange(e.target.value)}
-            className="border border-gray-300 text-sm p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
-          >
-            {rangeOptions.map(range => (
-              <option key={range} value={range}>{range}</option>
-            ))}
-          </select>
+            {/* --- */}
+            {/* Staff Performance */}
+            <section className="bg-white rounded-2xl shadow-xl p-8 mb-10 border border-gray-100">
+                <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Staff Performance Overview</h2>
+                {staffPerformance.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {staffPerformance.map((staff, index) => (
+                            <StaffPerformanceCard
+                                key={staff.name || index}
+                                staff={staff}
+                                inrFormatter={inrFormatter}
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-center text-gray-500 text-lg py-10">No staff performance data available for the current period.</p>
+                )}
+            </section>
         </div>
-        <div className="h-80 w-full">
-          <Line data={salesData} options={options} />
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
-const DashboardCard = ({ icon, label, value, bg, text }) => (
-  <div className={`rounded-xl shadow-md p-5 flex items-center justify-between ${bg} ${text}`}>
-    <div className="text-4xl">{icon}</div>
-    <div className="text-right">
-      <div className="text-sm font-medium">{label}</div>
-      <div className="text-xl font-bold">{value}</div>
+const DashboardCard = ({ icon, label, value, bgColor, textColor, onClick, isClickable }) => (
+    <div
+        className={`rounded-2xl shadow-lg p-6 flex flex-col items-center justify-center text-center space-y-3 
+        ${bgColor} ${textColor} 
+        transform transition-transform duration-300 hover:scale-105 hover:shadow-xl
+        ${isClickable ? 'cursor-pointer' : ''}`}
+        onClick={isClickable ? onClick : undefined}
+    >
+        <div className="flex-shrink-0 mb-2">{icon}</div>
+        <div className="flex-grow">
+            <div className="text-sm opacity-90 font-medium mb-1">{label}</div>
+            <div className="text-3xl font-extrabold">{value}</div>
+        </div>
     </div>
-  </div>
 );
+
+const StaffPerformanceCard = ({ staff, inrFormatter }) => {
+    const percentageAchieved = staff.target > 0 ? (staff.achieved / staff.target) * 100 : 0;
+    
+    let progressBarColor;
+    let performanceStatus;
+    let borderColor;
+
+    if (percentageAchieved >= 100) {
+        progressBarColor = 'bg-green-500';
+        performanceStatus = 'On Target';
+        borderColor = 'border-green-400';
+    } else if (percentageAchieved >= 75) {
+        progressBarColor = 'bg-yellow-500';
+        performanceStatus = 'Nearing Target';
+        borderColor = 'border-yellow-400';
+    } else if (percentageAchieved > 0) {
+        progressBarColor = 'bg-red-500';
+        performanceStatus = 'Below Target';
+        borderColor = 'border-red-400';
+    } else {
+        progressBarColor = 'bg-gray-400'; 
+        performanceStatus = 'No Progress Yet';
+        borderColor = 'border-gray-300';
+    }
+
+    return (
+        <div className={`bg-white rounded-xl shadow-lg p-5 border-t-4 ${borderColor} flex flex-col justify-between transform transition-all duration-200 hover:scale-[1.02] hover:shadow-xl`}>
+            <div>
+                <h4 className="text-xl font-bold text-gray-800 mb-1">{staff.name} <span className="text-gray-500 text-sm font-medium">({staff.role})</span></h4>
+                <p className={`text-sm font-semibold mb-3 ${percentageAchieved >= 100 ? 'text-green-600' : percentageAchieved >= 75 ? 'text-yellow-600' : 'text-red-600'}`}>
+                    Status: {performanceStatus}
+                </p>
+                <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-semibold text-gray-700">Target:</span> {inrFormatter.format(staff.target)}
+                </p>
+                <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-semibold text-gray-700">Achieved:</span> {inrFormatter.format(staff.achieved)}
+                </p>
+                <p className="text-sm text-gray-600 mb-3">
+                    <span className="font-semibold text-gray-700">Remaining:</span> {inrFormatter.format(staff.remaining)}
+                </p>
+            </div>
+            {staff.target > 0 ? (
+                // Adjusted progress bar for better percentage visibility
+                <div className="w-full bg-gray-200 rounded-full h-4 mt-3 relative overflow-hidden">
+                    <div
+                        className={`${progressBarColor} h-full rounded-full flex items-center px-2 text-xs font-bold text-black transition-all duration-500 ease-out`}
+                        style={{ width: `${Math.min(percentageAchieved, 100)}%` }}
+                        title={`${percentageAchieved.toFixed(1)}% achieved`}
+                    >
+                        {/* Conditionally render percentage only if there's enough space */}
+                        {percentageAchieved > 5 && <span className="absolute right-2">{percentageAchieved.toFixed(0)}%</span>}
+                        {percentageAchieved <= 5 && <span className="absolute left-1 text-gray-900">{percentageAchieved.toFixed(0)}%</span>}
+                    </div>
+                </div>
+            ) : (
+                <p className="text-xs text-gray-500 italic mt-3 p-1 bg-gray-50 rounded">No target set for this period.</p>
+            )}
+        </div>
+    );
+};
 
 export default Dashboard;

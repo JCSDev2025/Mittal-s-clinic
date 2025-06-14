@@ -114,7 +114,7 @@ const Reports = () => {
     allStaffList.forEach(staff => {
       staffSummaryMap[staff._id] = {
         name: capitalizeFirstLetter(staff.name),
-        salary: staff.salary,
+        // Removed salary: staff.salary,
         target: 0, // Initialize total target for the period
         achieved: 0, // Initialize total achieved for the period
         remaining: 0, // Will be calculated later
@@ -322,7 +322,8 @@ const Reports = () => {
               <thead className="bg-green-700 text-white text-sm sm:text-base">
                 <tr>
                   <th className="px-6 py-3 border-r border-green-600 text-left rounded-tl-lg">S.No.</th>
-                  {['Staff Name', 'Salary', 'Target Amount', 'Achieved', 'Remaining'].map(header => (
+                  {/* Removed 'Salary' from headers */}
+                  {['Staff Name', 'Target Amount', 'Achieved', 'Remaining'].map(header => (
                     <th key={header} className="px-6 py-3 border-r border-green-600 last:border-r-0 text-center">
                       {header}
                     </th>
@@ -337,7 +338,7 @@ const Reports = () => {
                   >
                     <td className="px-6 py-4 font-medium border-r border-green-200 text-center">{(staffPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
                     <td className="px-6 py-4 font-medium border-r border-green-200 text-center">{staff.name}</td>
-                    <td className="px-6 py-4 border-r border-green-200 text-center">{inrFormatter.format(staff.salary)}</td>
+                    {/* Removed salary display */}
                     <td className="px-6 py-4 text-center font-mono border-r border-green-200">{inrFormatter.format(staff.target)}</td>
                     <td className="px-6 py-4 text-center font-mono border-r border-green-200">{inrFormatter.format(staff.achieved)}</td>
                     <td className="px-6 py-4 text-center font-mono">{inrFormatter.format(staff.remaining)}</td>
@@ -345,7 +346,7 @@ const Reports = () => {
                 ))}
                 {staffSummary.length === 0 && (
                   <tr>
-                    <td colSpan="6" className="px-6 py-4 text-center text-gray-500">No staff data available or matches your search for the selected period.</td>
+                    <td colSpan="5" className="px-6 py-4 text-center text-gray-500">No staff data available or matches your search for the selected period.</td>
                   </tr>
                 )}
               </tbody>
